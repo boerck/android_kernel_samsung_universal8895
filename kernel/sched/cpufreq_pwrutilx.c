@@ -83,6 +83,7 @@ struct pwrgov_cpu {
 
 static DEFINE_PER_CPU(struct pwrgov_cpu, pwrgov_cpu);
 static DEFINE_PER_CPU(struct pwrgov_tunables *, cached_tunables);
+static unsigned int stale_ns;
 
 /************************ Governor internals ***********************/
 
@@ -349,7 +350,7 @@ static unsigned int pwrgov_next_freq_shared(struct pwrgov_cpu *sg_cpu, u64 time)
 		 * idle now (and clear iowait_boost for it).
 		 */
 		delta_ns = time - j_sg_cpu->last_update;
-		if (delta_ns > walt_ravg_window) {
+		if (delta_ns > stale_ns) {
 			j_sg_cpu->iowait_boost = 0;
 			j_sg_cpu->iowait_boost_pending = false;
 			continue;
@@ -744,6 +745,7 @@ static int pwrgov_init(struct cpufreq_policy *policy)
 
 	policy->governor_data = sg_policy;
 	sg_policy->tunables = tunables;
+	stale_ns = walt_ravg_window + (walt_ravg_window >> 3);
 
 	pwrgov_tunables_restore(policy);
 
