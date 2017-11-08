@@ -95,3 +95,8 @@ SCHED_FEAT(MIN_CAPACITY_CAPPING, false)
  * OFF: Use whichever of target or backup saves most.
  */
 SCHED_FEAT(FBT_STRICT_ORDER, false)
+
+/*
+ * UtilEstimation. Use estimated CPU utiliation.
+ */
+SCHED_FEAT(UTIL_EST, false)

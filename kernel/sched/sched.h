@@ -382,6 +382,7 @@ struct cfs_rq {
 	 * CFS load tracking
 	 */
 	struct sched_avg avg;
+	unsigned long util_est_runnable;
 	u64 runnable_load_sum;
 	unsigned long runnable_load_avg;
 #ifdef CONFIG_FAIR_GROUP_SCHED

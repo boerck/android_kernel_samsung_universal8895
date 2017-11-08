@@ -1535,6 +1535,20 @@ struct tlbflush_unmap_batch {
 	bool writable;
 };
 
+/**
+ * Estimation Utilization for FAIR tasks.
+ *
+ * Support data structure to track an EWMA utilization of FAIR tasks.
+ * New samples are added to the moving average each time a task completes an
+ * activation. Samples's weight is chosen so that the EWMA will be relatively
+ * insensitive to transient changes to the task's workload.
+ */
+struct util_est {
+	unsigned long		last;
+	unsigned long		ewma;
+#define UTIL_EST_WEIGHT_SHIFT	2
+};
+
 struct task_struct {
 #ifdef CONFIG_THREAD_INFO_IN_TASK
 	/*
@@ -1567,6 +1581,12 @@ struct task_struct {
 	unsigned int rt_priority;
 	const struct sched_class *sched_class;
 	struct sched_entity se;
+	/*
+	 * Since we use se.avg.util_avg to update util_est fields,
+	 * this last can benefit from being close to se which
+	 * also defines se.avg as cache aligned.
+	 */
+	struct util_est util_est;
 	struct sched_rt_entity rt;
 #ifdef CONFIG_SCHED_WALT
 	struct ravg ravg;
