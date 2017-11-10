@@ -6140,11 +6140,20 @@ unsigned long
 boosted_cpu_util(int cpu)
 {
 	unsigned long util = cpu_util_freq(cpu);
-	long margin = schedtune_cpu_margin(util, cpu);
+	long margin;
+
+#ifdef CONFIG_SCHED_WALT
+	if (walt_disabled || !sysctl_sched_use_walt_cpu_util)
+#endif
+		if (sched_feat(UTIL_EST))
+			util = max(util, cpu_rq(cpu)->cfs.util_est_runnable);
+
+	margin = schedtune_cpu_margin(util, cpu);
+	util = min_t(long, (margin), SCHED_CAPACITY_SCALE);
 
 	trace_sched_boost_cpu(cpu, util, margin);
 
-	return util + margin;
+	return util;
 }
 
 static inline unsigned long
