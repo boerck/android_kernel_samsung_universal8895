@@ -1603,16 +1603,23 @@ extern bool walt_disabled;
  * capacity_orig) as it useful for predicting the capacity required after task
  * migrations (scheduler-driven DVFS).
  */
-static inline unsigned long __cpu_util(int cpu, int delta)
+static inline unsigned long __cpu_util(int cpu, int delta,
+				       const bool opp_selection)
 {
-	unsigned long util = cpu_rq(cpu)->cfs.avg.util_avg;
 	unsigned long capacity = capacity_orig_of(cpu);
+	struct cfs_rq *cfs_rq = &cpu_rq(cpu)->cfs;
+	unsigned long util = cfs_rq->avg.util_avg;
 
 #ifdef CONFIG_SCHED_WALT
-	if (!walt_disabled && sysctl_sched_use_walt_cpu_util)
-		util = div64_u64(cpu_rq(cpu)->cumulative_runnable_avg,
+	if (!walt_disabled && sysctl_sched_use_walt_cpu_util) {
+		u64 walt_cpu_util = opp_selection
+			? cpu_rq(cpu)->prev_runnable_sum
+			: cpu_rq(cpu)->cumulative_runnable_avg;
+		util = div64_u64(walt_cpu_util,
 				 walt_ravg_window >> SCHED_LOAD_SHIFT);
+	}
 #endif
+
 	delta += util;
 	if (delta < 0)
 		return 0;
@@ -1622,20 +1629,12 @@ static inline unsigned long __cpu_util(int cpu, int delta)
 
 static inline unsigned long cpu_util(int cpu)
 {
-	return __cpu_util(cpu, 0);
+	return __cpu_util(cpu, 0, true);
 }
 
 static inline unsigned long cpu_util_freq(int cpu)
 {
-	unsigned long util = cpu_rq(cpu)->cfs.avg.util_avg;
-	unsigned long capacity = capacity_orig_of(cpu);
-
-#ifdef CONFIG_SCHED_WALT
-	if (!walt_disabled && sysctl_sched_use_walt_cpu_util)
-		util = div64_u64(cpu_rq(cpu)->prev_runnable_sum,
-				 walt_ravg_window >> SCHED_LOAD_SHIFT);
-#endif
-	return (util >= capacity) ? capacity : util;
+	return __cpu_util(cpu, 0, false);
 }
 #endif /* CONFIG_SMP */
 
