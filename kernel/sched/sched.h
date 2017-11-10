@@ -1637,8 +1637,7 @@ static inline unsigned long cpu_util_freq(int cpu)
 #endif
 	return (util >= capacity) ? capacity : util;
 }
-
-#endif
+#endif /* CONFIG_SMP */
 
 #ifdef CONFIG_CPU_FREQ_GOV_SCHED
 #define capacity_max SCHED_CAPACITY_SCALE
