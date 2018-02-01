@@ -706,7 +706,6 @@ int cpufreq_generic_init(struct cpufreq_policy *policy,
 		struct cpufreq_frequency_table *table,
 		unsigned int transition_latency);
 
-
 /*********************************************************************
 *						   CPUFREQ STATS							 *
 *********************************************************************/
