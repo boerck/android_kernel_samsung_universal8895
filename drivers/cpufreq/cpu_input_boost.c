@@ -9,6 +9,7 @@
 #include <linux/cpufreq.h>
 #include <linux/fb.h>
 #include <linux/input.h>
+#include <linux/moduleparam.h>
 #include <linux/slab.h>
 
 /* Available bits for boost_drv state */
@@ -29,6 +30,17 @@ struct boost_drv {
 	atomic_t max_boost_dur;
 	atomic_t state;
 };
+
+#ifdef CONFIG_DYNAMIC_STUNE_BOOST
+static bool stune_boost_active;
+static int ta_boost_slot;
+static int fg_boost_slot;
+static int ta_boost = 10;
+static int fg_boost = 10;
+
+module_param(ta_boost, int, 0644);
+module_param(fg_boost, int, 0644);
+#endif /* CONFIG_DYNAMIC_STUNE_BOOST */
 
 static struct boost_drv *boost_drv_g __read_mostly;
 
@@ -73,6 +85,15 @@ static void unboost_all_cpus(struct boost_drv *b)
 	if (!cancel_delayed_work_sync(&b->input_unboost) &&
 	    !cancel_delayed_work_sync(&b->max_unboost))
 		return;
+
+#ifdef CONFIG_DYNAMIC_STUNE_BOOST
+	/* Reset dynamic stune boost value to the default value */
+	if (stune_boost_active) {
+		reset_stune_boost("top-app", ta_boost_slot);
+		reset_stune_boost("foreground", fg_boost_slot);
+		stune_boost_active = false;
+	}
+#endif /* CONFIG_DYNAMIC_STUNE_BOOST */
 
 	clear_boost_bit(b, INPUT_BOOST | WAKE_BOOST | MAX_BOOST);
 	update_online_cpu_policy();
@@ -131,8 +152,19 @@ void cpu_input_boost_kick_max(unsigned int duration_ms)
 static void input_boost_worker(struct work_struct *work)
 {
 	struct boost_drv *b = container_of(work, typeof(*b), input_boost);
+	int ret;
 
 	if (!cancel_delayed_work_sync(&b->input_unboost)) {
+#ifdef CONFIG_DYNAMIC_STUNE_BOOST
+		/* Set dynamic stune boost value */
+		ret = do_stune_boost("top-app", ta_boost, &ta_boost_slot);
+		if (!ret)
+			ret = do_stune_boost("foreground", fg_boost, &fg_boost_slot);
+
+		if (!ret)
+			stune_boost_active = true;
+#endif /* CONFIG_DYNAMIC_STUNE_BOOST */
+
 		set_boost_bit(b, INPUT_BOOST);
 		update_online_cpu_policy();
 	}
@@ -145,6 +177,15 @@ static void input_unboost_worker(struct work_struct *work)
 {
 	struct boost_drv *b = container_of(to_delayed_work(work),
 					   typeof(*b), input_unboost);
+
+#ifdef CONFIG_DYNAMIC_STUNE_BOOST
+	/* Reset dynamic stune boost value to the default value */
+	if (stune_boost_active) {
+		reset_stune_boost("top-app", ta_boost_slot);
+		reset_stune_boost("foreground", fg_boost_slot);
+		stune_boost_active = false;
+	}
+#endif /* CONFIG_DYNAMIC_STUNE_BOOST */
 
 	clear_boost_bit(b, INPUT_BOOST);
 	update_online_cpu_policy();
