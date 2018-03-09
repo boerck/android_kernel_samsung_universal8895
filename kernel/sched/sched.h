@@ -1563,16 +1563,14 @@ extern bool walt_disabled;
 
 static inline unsigned long task_util(struct task_struct *p)
 {
-
 #ifdef CONFIG_SCHED_WALT
 	if (!walt_disabled && sysctl_sched_use_walt_task_util) {
 		unsigned long demand = p->ravg.demand;
-		return (demand << SCHED_CAPACITY_SHIFT) / walt_ravg_window;
+		return (demand << 10) / walt_ravg_window;
 	}
 #endif
 	return p->se.avg.util_avg;
 }
-
 
 /*
  * cpu_util returns the amount of capacity of a CPU that is used by CFS
