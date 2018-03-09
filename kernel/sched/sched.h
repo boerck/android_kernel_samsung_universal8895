@@ -1602,12 +1602,18 @@ static inline unsigned long __cpu_util(int cpu, int delta)
 {
 	unsigned long util = cpu_rq(cpu)->cfs.avg.util_avg;
 	unsigned long capacity = capacity_orig_of(cpu);
+	struct cfs_rq *cfs_rq = &cpu_rq(cpu)->cfs;
 
 #ifdef CONFIG_SCHED_WALT
 	if (!walt_disabled && sysctl_sched_use_walt_cpu_util)
-		util = div64_u64(cpu_rq(cpu)->cumulative_runnable_avg,
+		util = div64_u64(cfs_rq->cumulative_runnable_avg,
 				 walt_ravg_window >> SCHED_CAPACITY_SHIFT);
 #endif
+	util = cfs_rq->avg.util_avg;
+
+	if (sched_feat(UTIL_EST))
+		util = max_t(unsigned long, util, READ_ONCE(cfs_rq->avg.util_est.enqueued));
+
 	delta += util;
 	if (delta < 0)
 		return 0;

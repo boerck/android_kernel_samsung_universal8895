@@ -6141,7 +6141,7 @@ schedtune_task_margin(struct task_struct *p)
 	if (boost == 0)
 		return 0;
 
-	util = task_util(p);
+	util = task_util_est(p);
 	margin = schedtune_margin(util, boost);
 
 	return margin;
@@ -6177,7 +6177,7 @@ boosted_cpu_util(int cpu)
 static inline unsigned long
 boosted_task_util(struct task_struct *p)
 {
-	unsigned long util = task_util(p);
+	unsigned long util = task_util_est(p);
 	long margin = schedtune_task_margin(p);
 
 	trace_sched_boost_task(p, util, margin);
@@ -6535,7 +6535,8 @@ done:
  */
 static int cpu_util_wake(int cpu, struct task_struct *p)
 {
-	unsigned long util, capacity;
+	struct cfs_rq *cfs_rq;
+	unsigned long util;
 
 #ifdef CONFIG_SCHED_WALT
 	/*
@@ -6548,14 +6549,52 @@ static int cpu_util_wake(int cpu, struct task_struct *p)
 	    p->state == TASK_WAKING)
 		return cpu_util(cpu);
 #endif
+
 	/* Task has no contribution or is new */
-	if (cpu != task_cpu(p) || !p->se.avg.last_update_time)
+	if (cpu != task_cpu(p) || !READ_ONCE(p->se.avg.last_update_time))
 		return cpu_util(cpu);
 
-	capacity = capacity_orig_of(cpu);
-	util = max_t(long, cpu_util(cpu) - task_util(p), 0);
+	cfs_rq = &cpu_rq(cpu)->cfs;
+	util = READ_ONCE(cfs_rq->avg.util_avg);
 
-	return (util >= capacity) ? capacity : util;
+	/* Discount task's blocked util from CPU's util */
+	util -= min_t(unsigned int, util, task_util(p));
+
+	/*
+	 * Covered cases:
+	 *
+	 * a) if *p is the only task sleeping on this CPU, then:
+	 *      cpu_util (== task_util) > util_est (== 0)
+	 *    and thus we return:
+	 *      cpu_util_wake = (cpu_util - task_util) = 0
+	 *
+	 * b) if other tasks are SLEEPING on this CPU, which is now exiting
+	 *    IDLE, then:
+	 *      cpu_util >= task_util
+	 *      cpu_util > util_est (== 0)
+	 *    and thus we discount *p's blocked utilization to return:
+	 *      cpu_util_wake = (cpu_util - task_util) >= 0
+	 *
+	 * c) if other tasks are RUNNABLE on that CPU and
+	 *      util_est > cpu_util
+	 *    then we use util_est since it returns a more restrictive
+	 *    estimation of the spare capacity on that CPU, by just
+	 *    considering the expected utilization of tasks already
+	 *    runnable on that CPU.
+	 *
+	 * Cases a) and b) are covered by the above code, while case c) is
+	 * covered by the following code when estimated utilization is
+	 * enabled.
+	 */
+	if (sched_feat(UTIL_EST))
+		util = max_t(unsigned long, util, READ_ONCE(cfs_rq->avg.util_est.enqueued));
+
+	/*
+	 * Utilization (estimated) can exceed the CPU capacity, thus let's
+	 * clamp to the maximum CPU capacity to ensure consistency with
+	 * the cpu_util call.
+	 */
+	return min(util, capacity_orig_of(cpu));
 }
 
 static inline int find_best_target(struct task_struct *p, int *backup_cpu,
@@ -6635,7 +6674,7 @@ static inline int find_best_target(struct task_struct *p, int *backup_cpu,
 			 * accounting. However, the blocked utilization may be zero.
 			 */
 			wake_util = cpu_util_wake(i, p);
-			new_util = wake_util + task_util(p);
+			new_util = wake_util + task_util_est(p);
 
 			/*
 			 * Ensure minimum capacity to grant the required boost.
@@ -6912,7 +6951,7 @@ static int wake_cap(struct task_struct *p, int cpu, int prev_cpu)
 	/* Bring task utilization in sync with prev_cpu */
 	sync_entity_load_avg(&p->se);
 
-	return min_cap * 1024 < task_util(p) * capacity_margin;
+	return min_cap * 1024 < task_util_est(p) * capacity_margin;
 }
 
 static int select_energy_cpu_brute(struct task_struct *p, int prev_cpu, int sync)
@@ -6972,7 +7011,7 @@ static int select_energy_cpu_brute(struct task_struct *p, int prev_cpu, int sync
 		int delta = 0;
 		struct energy_env eenv = {
 			.p              = p,
-			.util_delta     = task_util(p),
+			.util_delta     = task_util_est(p),
 			/* Task's previous CPU candidate */
 			.cpu[EAS_CPU_PRV] = {
 				.cpu_id = prev_cpu,
