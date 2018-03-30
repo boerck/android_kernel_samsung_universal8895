@@ -2060,6 +2060,8 @@ static int alg_test_null(const struct alg_test_desc *desc,
 	return 0;
 }
 
+#define __VECS(tv)	{ .vecs = tv, .count = ARRAY_SIZE(tv) }
+
 /* Please keep this list sorted by algorithm name. */
 static const struct alg_test_desc alg_test_descs[] = {
 	{
@@ -3939,6 +3941,16 @@ static const struct alg_test_desc alg_test_descs[] = {
 					.vecs = zlib_decomp_tv_template,
 					.count = ZLIB_DECOMP_TEST_VECTORS
 				}
+			}
+		}
+	}, {
+		.alg = "zstd",
+		.test = alg_test_comp,
+		.fips_allowed = 1,
+		.suite = {
+			.comp = {
+				.comp = __VECS(zstd_comp_tv_template),
+				.decomp = __VECS(zstd_decomp_tv_template)
 			}
 		}
 	}
