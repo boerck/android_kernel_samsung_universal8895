@@ -112,6 +112,10 @@ on post-fs-data
     restorecon /data/privatemode
 
 on boot
+# UFS readahead
+    chmod 660 /sys/block/sda/queue/read_ahead_kb
+    write /sys/block/sda/queue/read_ahead_kb 2048
+
 # SSWAP
     write /proc/sys/vm/swappiness 160
 
