@@ -1647,7 +1647,7 @@ int exynos_pcie_poweron(int ch_num)
 			exynos_pcie->probe_ok = 1;
 		} else if (exynos_pcie->probe_ok) {
 			if (exynos_pcie->boot_cnt == 0) {
-				schedule_delayed_work(&exynos_pcie->work_l1ss, msecs_to_jiffies(40000));
+				queue_delayed_work(system_power_efficient_wq, &exynos_pcie->work_l1ss, msecs_to_jiffies(40000));
 				exynos_pcie->boot_cnt++;
 				exynos_pcie->l1ss_ctrl_id_state |= PCIE_L1SS_CTRL_BOOT;
 			}

@@ -484,7 +484,7 @@ int fts_write_reg(struct fts_ts_info *info,
 		ret = -EIO;
 #ifdef USE_POR_AFTER_I2C_RETRY
 		if (info->probe_done && !info->reset_is_on_going)
-			schedule_delayed_work(&info->reset_work, msecs_to_jiffies(10));
+			queue_delayed_work(system_power_efficient_wq, &info->reset_work, msecs_to_jiffies(10));
 #endif
 	}
 	return ret;
@@ -552,7 +552,7 @@ int fts_read_reg(struct fts_ts_info *info, unsigned char *reg, int cnum,
 		ret = -EIO;
 #ifdef USE_POR_AFTER_I2C_RETRY
 		if (info->probe_done && !info->reset_is_on_going)
-			schedule_delayed_work(&info->reset_work, msecs_to_jiffies(10));
+			queue_delayed_work(system_power_efficient_wq, &info->reset_work, msecs_to_jiffies(10));
 #endif
 	}
 	return ret;
@@ -1083,7 +1083,7 @@ static int fts_wait_for_ready(struct fts_ts_info *info)
 			rc = -FTS_ERROR_TIMEOUT;
 			input_err(true, &info->client->dev, "%s: Time Over\n", __func__);
 			if (info->fts_power_state == FTS_POWER_STATE_LOWPOWER)
-				schedule_delayed_work(&info->reset_work, msecs_to_jiffies(10));
+				queue_delayed_work(system_power_efficient_wq, &info->reset_work, msecs_to_jiffies(10));
 
 			break;
 		}
@@ -1853,7 +1853,7 @@ static unsigned char fts_event_handler_type_b(struct fts_ts_info *info,
 					data[EventNum * FTS_EVENT_SIZE+6],
 					data[EventNum * FTS_EVENT_SIZE+7]);
 
-				schedule_delayed_work(&info->reset_work, msecs_to_jiffies(10));
+				queue_delayed_work(system_power_efficient_wq, &info->reset_work, msecs_to_jiffies(10));
 			} else if (status == STATUS_EVENT_RAW_DATA_READY) {
 				unsigned char regAdd[4] = {0xB0, 0x01, 0x29, 0x01};
 
@@ -3020,7 +3020,7 @@ static int fts_probe(struct i2c_client *client, const struct i2c_device_id *idp)
 
 	fts_check_custom_library(info);
 
-	schedule_delayed_work(&info->work_read_info, msecs_to_jiffies(5 * MSEC_PER_SEC));
+	queue_delayed_work(system_power_efficient_wq, &info->work_read_info, msecs_to_jiffies(5 * MSEC_PER_SEC));
 
 #if defined(CONFIG_TOUCHSCREEN_DUMP_MODE)
 	dump_callbacks.inform_dump = tsp_dump;
@@ -3207,7 +3207,7 @@ static int fts_input_open(struct input_dev *dev)
 #endif
 
 #ifdef USE_OPEN_DWORK
-	schedule_delayed_work(&info->open_work,
+	queue_delayed_work(system_power_efficient_wq, &info->open_work,
 			      msecs_to_jiffies(TOUCH_OPEN_DWORK_TIME));
 #else
 	retval = fts_start_device(info);
@@ -3473,7 +3473,7 @@ void tsp_dump(void)
 		return;
 
 	pr_err("%s: %s %s: start\n", FTS_TS_DRV_NAME, SECLOG, __func__);
-	schedule_delayed_work(p_debug_work, msecs_to_jiffies(100));
+	queue_delayed_work(system_power_efficient_wq, p_debug_work, msecs_to_jiffies(100));
 }
 
 static void fts_reset(struct fts_ts_info *info, unsigned int ms)
