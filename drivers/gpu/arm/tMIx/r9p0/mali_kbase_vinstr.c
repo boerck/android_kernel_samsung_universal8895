@@ -432,7 +432,7 @@ static int kbasep_vinstr_create_kctx(struct kbase_vinstr_context *vinstr_ctx)
 	if (err)
 		goto failed_enable;
 
-	vinstr_ctx->thread = kthread_run(
+	vinstr_ctx->thread = kthread_run_perf_critical(
 			kbasep_vinstr_service_task,
 			vinstr_ctx,
 			"mali_vinstr_service");
