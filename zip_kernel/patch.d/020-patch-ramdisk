@@ -20,4 +20,7 @@ find -type f \( \
 print "Copying new files to the ramdisk..."
 cp -rd ./. "$ramdisk/"
 
+rm -rf $ramdisk/sbin/dm_verity_signature_checker
+rm -rf $ramdisk/sbin/knox_changer
+
 exit 0
