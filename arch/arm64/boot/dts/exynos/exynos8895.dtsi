@@ -558,21 +558,6 @@
 		};
 	};
 
-	schedtune {
-		domain@0 {
-			device_type = "schedtune-freqvar";
-			shared-cpus = "0-3";
-			/* this table works like target_load of interactive parameter */
-			table = < 100 598000 60 715000 30 832000 20 949000 10 1053000 0 >;
-		};
-		domain@1 {
-			device_type = "schedtune-freqvar";
-			shared-cpus = "4-7";
-			/* this table works like target_load of interactive parameter */
-			table = < 20 858000 15 962000 5 1261000 0 >;
-		};
-	};
-
 	cpufreq {
 		domain@0 {
 			device_type = "cpufreq-domain";
