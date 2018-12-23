@@ -59,7 +59,7 @@ extern int sec_therm_get_ap_temperature(void);
 #endif
 
 #ifdef CONFIG_SCHED_HMP
-extern int set_hmp_boost(int enable);
+//extern int set_hmp_boost(int enable);
 #endif
 
 extern int gpu_register_dump(void);
