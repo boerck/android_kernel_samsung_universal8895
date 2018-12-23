@@ -94,9 +94,6 @@ void acct_update_power(struct task_struct *task, cputime_t cputime) {
 		return;
 
 	curr = powerstats->curr[stats->last_index];
-	task->cpu_power += curr * cputime_to_usecs(cputime);
-	if (task->cpu_power != ULLONG_MAX)
-		task->cpu_power += curr * cputime_to_usecs(cputime);
 }
 EXPORT_SYMBOL_GPL(acct_update_power);
 
@@ -373,7 +370,7 @@ static void cpufreq_stats_create_table(unsigned int cpu)
 	cpufreq_cpu_put(policy);
 }
 
-#ifdef CONFIG_SCHED_HMP
+#if 0
 extern struct cpumask hmp_slow_cpu_mask;
 extern struct cpumask hmp_fast_cpu_mask;
 #endif
@@ -385,7 +382,7 @@ static int cpufreq_stat_notifier_policy(struct notifier_block *nb,
 	struct cpufreq_policy *policy = data;
 	struct cpufreq_frequency_table *table, *pos;
 	unsigned int cpu_num, cpu = policy->cpu;
-#ifdef CONFIG_SCHED_HMP
+#if 0
 	struct cpumask hmp_cpu_mask;
 #endif
 
@@ -397,7 +394,7 @@ static int cpufreq_stat_notifier_policy(struct notifier_block *nb,
 	cpufreq_for_each_valid_entry(pos, table)
 		count++;
 
-#ifdef CONFIG_SCHED_HMP
+#if 0
 	cpu_num = cpu;
 	cpumask_and(&hmp_cpu_mask, cpu_coregroup_mask(cpu_num), cpu_online_mask);
 	for_each_cpu(cpu_num, &hmp_cpu_mask) {

@@ -59,8 +59,8 @@
 extern int sec_therm_get_ap_temperature(void);
 #endif
 
-#ifdef CONFIG_SCHED_HMP
-extern int set_hmp_boost(int enable);
+#if 0
+//extern int set_hmp_boost(int enable);
 #endif
 
 #ifdef CONFIG_MALI_VK_BOOST
@@ -115,13 +115,13 @@ void gpu_destroy_context(void *ctx)
 #ifdef CONFIG_MALI_DVFS
 	gpu_dvfs_boost_lock(GPU_DVFS_BOOST_UNSET);
 #endif
-#ifdef CONFIG_SCHED_HMP
+#if 0
 	platform = (struct exynos_context *) kbdev->platform_context;
 	mutex_lock(&platform->gpu_sched_hmp_lock);
 
 	if (platform->ctx_need_qos) {
 		platform->ctx_need_qos = false;
-		set_hmp_boost(0);
+		//set_hmp_boost(0);
 		set_hmp_aggressive_up_migration(false);
 		set_hmp_aggressive_yield(false);
 	}
@@ -178,12 +178,12 @@ int gpu_vendor_dispatch(struct kbase_context *kctx, u32 flags)
 			struct exynos_context *platform;
 			platform = (struct exynos_context *) kbdev->platform_context;
 #endif
-#ifdef CONFIG_SCHED_HMP
+#if 0
 			mutex_lock(&platform->gpu_sched_hmp_lock);
 			if (!platform->ctx_need_qos) {
 				platform->ctx_need_qos = true;
 				/* set hmp boost */
-				set_hmp_boost(1);
+				//set_hmp_boost(1);
 				set_hmp_aggressive_up_migration(true);
 				set_hmp_aggressive_yield(true);
 			}
@@ -201,12 +201,12 @@ int gpu_vendor_dispatch(struct kbase_context *kctx, u32 flags)
 			struct exynos_context *platform;
 			platform = (struct exynos_context *) kbdev->platform_context;
 #endif
-#ifdef CONFIG_SCHED_HMP
+#if 0
 			mutex_lock(&platform->gpu_sched_hmp_lock);
 			if (platform->ctx_need_qos) {
 				platform->ctx_need_qos = false;
 				/* unset hmp boost */
-				set_hmp_boost(0);
+				//set_hmp_boost(0);
 				set_hmp_aggressive_up_migration(false);
 				set_hmp_aggressive_yield(false);
 			}
