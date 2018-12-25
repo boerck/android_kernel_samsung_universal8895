@@ -1531,7 +1531,7 @@ static int exynos_tmu_cpus_notifier(struct notifier_block *nb,
 
 
 	cpumask_copy(&mask, data);
-	cpumask_and(&mask, &mask, cpu_coregroup_mask(1));
+	cpumask_and(&mask, &mask, cpu_coregroup_mask(4));
 	big_cpu_cnt = cpumask_weight(&mask);
 
 	cpumask_copy(&cpufreq_device->target_cpus, &mask);
