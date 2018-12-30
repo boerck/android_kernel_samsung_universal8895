@@ -1,0 +1,26 @@
+#!/system/bin/sh
+
+# Configure values based on universal9810
+## EAS ##
+echo 0 > /dev/stune/schedtune.boost
+echo 10 > /dev/stune/top-app/schedtune.boost
+echo 1 > /dev/stune/top-app/schedtune.prefer_idle
+echo 1 > /dev/stune/foreground/schedtune.prefer_idle
+echo -10 > /dev/stune/background/schedtune.boost
+
+## cpuset ##
+echo "0-3,6-7" > /dev/cpuset/foreground/cpus
+
+## UFS ##
+echo 128 > /sys/block/sda/queue/nr_requests
+
+# schedutil values based on wahoo (Pixel 2 XL)
+## little ##
+echo "schedutil" > /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor
+echo 500 > /sys/devices/system/cpu/cpufreq/policy0/schedutil/up_rate_limit_us
+echo 20000 > /sys/devices/system/cpu/cpufreq/policy0/schedutil/down_rate_limit_us
+
+## big ##
+echo "schedutil" > /sys/devices/system/cpu/cpu4/cpufreq/scaling_governor
+echo 500 > /sys/devices/system/cpu/cpufreq/policy4/schedutil/up_rate_limit_us
+echo 20000 > /sys/devices/system/cpu/cpufreq/policy4/schedutil/down_rate_limit_us
