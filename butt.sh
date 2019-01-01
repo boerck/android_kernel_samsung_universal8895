@@ -9,15 +9,15 @@
 
 set -e -o pipefail
 
+DATE=$(date +'%Y%m%d-%H%M')
 DEFCONFIG=exynos8895-dream2lte_defconfig
 NAME=RZ_kernel
-VERSION=v1.0
 
 export ARCH=arm64
-export LOCALVERSION=-${VERSION}
+export LOCALVERSION=-${VERSION}-${DATE}
 
 KERNEL_PATH=$(pwd)
-KERNEL_ZIP=${KERNEL_PATH}/kernel_zip
+KERNEL_ZIP=${KERNEL_PATH}/zip_kernel
 KERNEL_ZIP_NAME=${NAME}_${VERSION}.zip
 KERNEL_IMAGE=${KERNEL_ZIP}/Image
 DT_IMG=${KERNEL_ZIP}/dtb.img
@@ -64,7 +64,7 @@ function make_zip() {
 	echo -e "$red";
 	echo -e "Making flashable zip...$nocol";
 
-	cd ${KERNEL_PATH}/kernel_zip;
+	cd ${KERNEL_ZIP};
 	make -j${JOBS};
 }
 
