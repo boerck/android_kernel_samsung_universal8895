@@ -1,0 +1,27 @@
+#!/sbin/sh
+
+. "$env";
+
+cd $tmp;
+
+#### Originally written by @djb77 ####
+# Copy system
+#cp -rf system/. /system; #diepquynh1501: Add later
+
+# Remove unwanted file from /system/app/mcRegistry
+rm -f /system/app/mcRegistry/ffffffffd0000000000000000000000a.tlbin;
+
+# Remove RMM State Lock
+rm -rf /system/priv-app/Rlc;
+sed -i -- 's/ro.security.vaultkeeper.feature=1/ro.security.vaultkeeper.feature=0/g' $build_prop;
+
+# Remove Security Log Agent
+rm -rf /system/app/SecurityLogAgent;
+
+# Delete Wakelock.sh (in case these were installed somewhere else)
+rm -f /magisk/phh/su.d/wakelock*;
+rm -f /su/su.d/wakelock*;
+rm -f /system/su.d/wakelock*;
+rm -f /system/etc/init.d/wakelock*;
+
+exit 0;
