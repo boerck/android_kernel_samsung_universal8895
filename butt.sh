@@ -10,7 +10,6 @@
 set -e -o pipefail
 
 DATE=$(date +'%Y%m%d-%H%M')
-DEFCONFIG=exynos8895-dream2lte_defconfig
 NAME=RZ_kernel
 
 export ARCH=arm64
@@ -91,6 +90,38 @@ function clean() {
 	echo -e "Done!$nocol";
 }
 
+function menu() {
+	echo;
+	echo -e "***********************************************************************";
+	echo "      RZ Kernel for ${DEVICE}";
+	echo -e "***********************************************************************";
+	echo "Choices:";
+	echo "1. Cleanup source";
+	echo "2. Build kernel";
+	echo "3. Build kernel then make flashable ZIP";
+	echo "4. Make flashable ZIP package";
+	echo "Leave empty to exit this script (it'll show invalid choice)";
+}
+
+function select_device() {
+	echo "Select which device you want to build for";
+	echo "1. Samsung Galaxy S8 (Exynos) (SM-G950F/FD)";
+	echo "2. Samsung Galaxy S8 Plus (Exynos) (SM-G955F/FD)";
+	read -n 1 -p "Choice: " -s device;	
+	case ${device} in
+		1) export DEFCONFIG=exynos8895-dreamlte_defconfig
+		   export DEVICE="Samsung Galaxy S8 (Exynos) (SM-G950F/FD)"
+		   menu;;
+		2) export DEFCONFIG=exynos8895-dream2lte_defconfig
+		   export DEVICE="Samsung Galaxy S8 Plus (Exynos) (SM-G955F/FD)"
+		   menu;;
+		*) echo
+		   echo "Invalid choice entered. Exiting..."
+		   sleep 2;
+		   exit 1;;
+	esac
+}
+
 function main() {
 	clear;
 	read -p "Please specify Toolchain path: " tcpath;
@@ -111,15 +142,7 @@ function main() {
 		echo -e "You have enabled ccache through *export USE_CCACHE=1*, now using ccache...$nocol";
 	fi;
 
-	echo -e "***********************************************************************";
-	echo "      RZ Kernel for Samsung Galaxy S8 Plus (Exynos) (SM-G955F/FD)";
-	echo -e "***********************************************************************";
-	echo "Choices:";
-	echo "1. Cleanup source";
-	echo "2. Build kernel";
-	echo "3. Build kernel then make flashable ZIP";
-	echo "4. Make flashable ZIP package";
-	echo "Leave empty to exit this script (it'll show invalid choice)";
+	select_device;
 
 	read -n 1 -p "Select your choice: " -s choice;
 	case ${choice} in
