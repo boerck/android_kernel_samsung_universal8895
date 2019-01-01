@@ -2,12 +2,19 @@
 
 . "$env";
 
-cd $tmp;
+cd "${tmp}/system/vendor" && [ "$(ls)" ] || exit 0;
+
+# Fix permissions
+chmod -R 0755 .;
+
+# Copy files
+cp -rf ./. /system/vendor;
+chmod 0644 /system/vendor/lib/libsecure_storage.so;
+chmod 0644 /system/vendor/lib64/libsecure_storage.so;
+chmod 0644 /system/vendor/firmware/fimc_is_lib.bin;
+chmod 0644 /system/vendor/firmware/fimc_is_rta_2l2_3h1.bin;
 
 #### Originally written by @djb77 ####
-# Copy system
-#cp -rf system/. /system; #diepquynh1501: Add later
-
 # Remove unwanted file from /system/app/mcRegistry
 rm -f /system/app/mcRegistry/ffffffffd0000000000000000000000a.tlbin;
 
