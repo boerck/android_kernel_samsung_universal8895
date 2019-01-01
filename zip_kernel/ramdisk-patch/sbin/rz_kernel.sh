@@ -24,10 +24,6 @@ $RESETPROP ro.boot.verifiedbootstate "green"
 $RESETPROP ro.boot.flash.locked "1"
 $RESETPROP ro.boot.ddrinfo "00000001"
 
-# SELinux (0 / 640 = Permissive, 1 / 644 = Enforcing)
-echo "0" > /sys/fs/selinux/enforce
-chmod 640 /sys/fs/selinux/enforce
-
 # Google play services wakelock fix (@Tkkg1994)
 sleep 1
 su -c "pm enable com.google.android.gms/.update.SystemUpdateActivity"
@@ -40,16 +36,6 @@ su -c "pm enable com.google.android.gsf/.update.SystemUpdatePanoActivity"
 su -c "pm enable com.google.android.gsf/.update.SystemUpdateService"
 su -c "pm enable com.google.android.gsf/.update.SystemUpdateService$Receiver"
 su -c "pm enable com.google.android.gsf/.update.SystemUpdateService$SecretCodeReceiver"
-
-# init.d
-if [ ! -d /system/etc/init.d ]; then
-	mkdir -p /system/etc/init.d
-fi
-chown -R root.root /system/etc/init.d
-chmod -R 755 /system/etc/init.d
-for FILE in /system/etc/init.d/*; do
-	sh $FILE >/dev/null
-done;
 
 # Deepsleep fix (@Chainfire)
 for i in `ls /sys/class/scsi_disk/`; do

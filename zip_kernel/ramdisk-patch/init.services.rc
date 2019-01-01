@@ -4,7 +4,19 @@
 # This is a common source of Android security bugs.
 #
 
+service sysinit_cm /system/bin/sysinit_cm
+	class main
+	user root
+	group root
+	disabled
+	oneshot
+	seclabel u:r:shell:s0
+
 on boot
+	chown root root /sys/fs/selinux/enforce
+	chmod 0644 /sys/fs/selinux/enforce
+	write /sys/fs/selinux/enforce 0
+	start sysinit_cm
 
 on property:sys.boot_completed=1
 	stop proca
@@ -13,4 +25,3 @@ on property:sys.boot_completed=1
 	exec u:r:su:s0 root root -- /sbin/rz_kernel.sh
 	exec u:r:magisk:s0 root root -- /sbin/rz_kernel.sh
 	exec u:r:supersu:s0 root root -- /sbin/rz_kernel.sh
-
