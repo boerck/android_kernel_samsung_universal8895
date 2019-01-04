@@ -93,7 +93,7 @@ function clean() {
 function menu() {
 	echo;
 	echo -e "***********************************************************************";
-	echo "      RZ Kernel for ${DEVICE}";
+	echo "      RZ Kernel for ${DEVICE_NAME}";
 	echo -e "***********************************************************************";
 	echo "Choices:";
 	echo "1. Cleanup source";
@@ -110,10 +110,12 @@ function select_device() {
 	read -n 1 -p "Choice: " -s device;	
 	case ${device} in
 		1) export DEFCONFIG=exynos8895-dreamlte_defconfig
-		   export DEVICE="Samsung Galaxy S8 (Exynos) (SM-G950F/FD)"
+		   export DEVICE="dreamlte"
+		   export DEVICE_NAME="Samsung Galaxy S8 (Exynos) (SM-G950F/FD)"
 		   menu;;
 		2) export DEFCONFIG=exynos8895-dream2lte_defconfig
-		   export DEVICE="Samsung Galaxy S8 Plus (Exynos) (SM-G955F/FD)"
+		   export DEVICE="dream2lte"
+		   export DEVICE_NAME="Samsung Galaxy S8 Plus (Exynos) (SM-G955F/FD)"
 		   menu;;
 		*) echo
 		   echo "Invalid choice entered. Exiting..."
