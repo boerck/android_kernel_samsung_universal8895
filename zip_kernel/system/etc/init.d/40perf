@@ -18,13 +18,13 @@ echo 0 > /sys/block/sda/queue/rq_affinity;
 busybox fstrim -v /cache > /data/trim.log;
 busybox fstrim -v /data >> /data/trim.log;
 
-# schedutil values based on wahoo (Pixel 2 XL)
-## little ##
+## schedutil ##
+# little #
 echo "schedutil" > /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor
-echo 500 > /sys/devices/system/cpu/cpufreq/policy0/schedutil/up_rate_limit_us
-echo 20000 > /sys/devices/system/cpu/cpufreq/policy0/schedutil/down_rate_limit_us
+echo 100 > /sys/devices/system/cpu/cpufreq/policy0/schedutil/up_rate_limit_us
+echo 50 > /sys/devices/system/cpu/cpufreq/policy0/schedutil/down_rate_limit_us
 
-## big ##
+# big #
 echo "schedutil" > /sys/devices/system/cpu/cpu4/cpufreq/scaling_governor
-echo 500 > /sys/devices/system/cpu/cpufreq/policy4/schedutil/up_rate_limit_us
-echo 20000 > /sys/devices/system/cpu/cpufreq/policy4/schedutil/down_rate_limit_us
+echo 50 > /sys/devices/system/cpu/cpufreq/policy4/schedutil/up_rate_limit_us
+echo 100 > /sys/devices/system/cpu/cpufreq/policy4/schedutil/down_rate_limit_us
