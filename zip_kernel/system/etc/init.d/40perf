@@ -12,7 +12,11 @@ echo -10 > /dev/stune/background/schedtune.boost
 echo "0-3,6-7" > /dev/cpuset/foreground/cpus
 
 ## UFS ##
-echo 128 > /sys/block/sda/queue/nr_requests
+echo 256 > /sys/block/sda/queue/nr_requests
+echo 0 > /sys/block/sda/queue/rq_affinity;
+# trim #
+busybox fstrim -v /cache > /data/trim.log;
+busybox fstrim -v /data >> /data/trim.log;
 
 # schedutil values based on wahoo (Pixel 2 XL)
 ## little ##
