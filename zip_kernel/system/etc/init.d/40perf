@@ -8,9 +8,6 @@ echo 1 > /dev/stune/top-app/schedtune.prefer_idle
 echo 1 > /dev/stune/foreground/schedtune.prefer_idle
 echo -10 > /dev/stune/background/schedtune.boost
 
-## cpuset ##
-echo "0-3,6-7" > /dev/cpuset/foreground/cpus
-
 ## UFS ##
 echo 256 > /sys/block/sda/queue/nr_requests
 echo 0 > /sys/block/sda/queue/rq_affinity;
