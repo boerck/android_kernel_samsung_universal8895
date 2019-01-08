@@ -472,10 +472,10 @@ on boot
     write /dev/cpuctl/bg_abnormal/cpu.cfs_quota_us 10000
 
     mkdir /dev/cpuset/cached
-    write /dev/cpuset/cached/cpus 0-2
+    write /dev/cpuset/cached/cpus 0-1
     copy /dev/cpuset/mems /dev/cpuset/cached/mems
     mkdir /dev/cpuset/abnormal
-    write /dev/cpuset/abnormal/cpus 0-2
+    write /dev/cpuset/abnormal/cpus 0-1
     copy /dev/cpuset/mems /dev/cpuset/abnormal/mems
 
     # change permissions for BarTender's cpusets we'll touch at runtime
@@ -502,11 +502,11 @@ on boot
     write /dev/cpuset/top-app/cpus 0-7
     write /dev/cpuset/top-app/mems 0
     write /dev/cpuset/top-app/family_boost 1
-    write /dev/cpuset/foreground/cpus 0-2,4-7
+    write /dev/cpuset/foreground/cpus 0-1,4-7
     write /dev/cpuset/foreground/mems 0
     write /dev/cpuset/background/cpus 0-1
     write /dev/cpuset/background/mems 0
-    write /dev/cpuset/system-background/cpus 0-2
+    write /dev/cpuset/system-background/cpus 0-3
     write /dev/cpuset/system-background/mems 0
 
 on fs
