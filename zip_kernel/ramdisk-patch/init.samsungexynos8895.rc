@@ -3,6 +3,7 @@ import init.baseband.rc
 import /init.wifi.rc
 import init.gps.rc
 import init.carrier.rc
+import /init.spectrum.rc
 
 on early-init
     mkdir /efs 0771 radio system
@@ -211,6 +212,10 @@ on boot
     chmod 0664 /sys/kernel/hmp/wakeup_to_idle_cpu
 
 # SEC_PM sysfs
+    # Mongoose DVFS
+    chown system system /sys/devices/system/cpu/cpu4/cpufreq/scaling_max_freq
+    chmod 0660 /sys/devices/system/cpu/cpu4/cpufreq/scaling_max_freq
+
     # DVFS & Hotplug
     chown system system /sys/power/cpuhotplug/enabled
     chown system system /sys/power/cpuhotplug/min_online_cpu

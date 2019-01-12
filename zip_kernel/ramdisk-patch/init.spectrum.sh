@@ -4,5 +4,6 @@
 
 # If there is not a persist value, we need to set one
 if [ ! -f /data/property/persist.spectrum.profile ]; then
-    setprop persist.spectrum.profile 0
+    # diepqunh1501: For fastest initial experience, set performance mode @
+    setprop persist.spectrum.profile 1
 fi
