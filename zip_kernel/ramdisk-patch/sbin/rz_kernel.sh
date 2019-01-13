@@ -18,6 +18,9 @@ $RESETPROP ro.warranty_bit "0"
 $RESETPROP ro.fmp_config "1"
 $RESETPROP ro.boot.fmp_config "1"
 
+# Fix Samsung Health (CuBz90@XDA)
+$RESETPROP ro.config.tima "0"
+
 # Fix safetynet flags
 $RESETPROP ro.boot.veritymode "enforcing"
 $RESETPROP ro.boot.verifiedbootstate "green"
