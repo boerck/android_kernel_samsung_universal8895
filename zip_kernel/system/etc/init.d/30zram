@@ -49,7 +49,7 @@ for i in $(busybox seq 0 $(($num_cpu - 1))); do
 done;
 
 # Enable zswap after zram init is done
-echo "50" > /sys/module/zswap/parameters/max_pool_percent;
+echo "20" > /sys/module/zswap/parameters/max_pool_percent;
 echo "1" > /sys/module/zswap/parameters/enabled;
 
 # Set maximum swappiness
