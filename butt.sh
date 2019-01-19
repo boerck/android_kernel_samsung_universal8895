@@ -13,7 +13,7 @@ DATE=$(date +'%Y%m%d-%H%M')
 NAME=RZ_kernel
 
 export ARCH=arm64
-export LOCALVERSION=-${VERSION}-${DATE}
+export LOCALVERSION=-${VERSION}${DATE}
 
 KERNEL_PATH=$(pwd)
 KERNEL_ZIP=${KERNEL_PATH}/zip_kernel
