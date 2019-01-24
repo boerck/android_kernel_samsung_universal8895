@@ -2443,6 +2443,9 @@ static int __init ksm_init(void)
 		goto out_free;
 	}
 
+	/* ExySp: set affinity to little */
+	set_cpus_allowed_ptr(ksm_thread, cpu_coregroup_mask(0));
+
 #ifdef CONFIG_SYSFS
 	err = sysfs_create_group(mm_kobj, &ksm_attr_group);
 	if (err) {
