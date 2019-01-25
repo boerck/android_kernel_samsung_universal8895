@@ -265,6 +265,8 @@ on boot
     chmod 0664 /sys/devices/platform/13900000.mali/dvfs_min_lock
     chown radio system /sys/devices/platform/13900000.mali/dvfs_max_lock
     chmod 0664 /sys/devices/platform/13900000.mali/dvfs_max_lock
+    chown radio system /sys/devices/platform/13900000.mali/clock
+    chmod 0664 /sys/devices/platform/13900000.mali/clock
 
     # Cstate node
     chown radio system /sys/module/cpuidle/parameters/off
