@@ -18,10 +18,10 @@ busybox fstrim -v /data >> /data/trim.log;
 ## schedutil ##
 # little #
 echo "schedutil" > /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor
-echo 100 > /sys/devices/system/cpu/cpufreq/policy0/schedutil/up_rate_limit_us
-echo 50 > /sys/devices/system/cpu/cpufreq/policy0/schedutil/down_rate_limit_us
+echo 100000 > /sys/devices/system/cpu/cpufreq/policy0/schedutil/up_rate_limit_us
+echo 50000 > /sys/devices/system/cpu/cpufreq/policy0/schedutil/down_rate_limit_us
 
 # big #
 echo "schedutil" > /sys/devices/system/cpu/cpu4/cpufreq/scaling_governor
-echo 50 > /sys/devices/system/cpu/cpufreq/policy4/schedutil/up_rate_limit_us
-echo 100 > /sys/devices/system/cpu/cpufreq/policy4/schedutil/down_rate_limit_us
+echo 50000 > /sys/devices/system/cpu/cpufreq/policy4/schedutil/up_rate_limit_us
+echo 100000 > /sys/devices/system/cpu/cpufreq/policy4/schedutil/down_rate_limit_us
