@@ -25,3 +25,7 @@ echo 50000 > /sys/devices/system/cpu/cpufreq/policy0/schedutil/down_rate_limit_u
 echo "schedutil" > /sys/devices/system/cpu/cpu4/cpufreq/scaling_governor
 echo 50000 > /sys/devices/system/cpu/cpufreq/policy4/schedutil/up_rate_limit_us
 echo 100000 > /sys/devices/system/cpu/cpufreq/policy4/schedutil/down_rate_limit_us
+
+# Block unwanted wakelocks
+WAKELOCKS="12860000.decon_f;ssp_comm_wake_lock;ssp_wake_lock;tsp_wakelock;umts_ipc0;umts_ipc1"
+echo $WAKELOCKS > /sys/class/misc/boeffla_wakelock_blocker/wakelock_blocker
