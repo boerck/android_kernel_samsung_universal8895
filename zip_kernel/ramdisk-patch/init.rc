@@ -6,7 +6,6 @@
 
 import /init.environ.rc
 import /init.usb.rc
-
 import /init.${ro.hardware}.rc
 import /vendor/etc/init/hw/init.${ro.hardware}.rc
 import /init.services.rc
@@ -30,6 +29,18 @@ on early-init
     # Set the security context of /postinstall if present.
     restorecon /postinstall
 
+    # Mount cgroup mount point for cpu accounting
+    mount cgroup none /acct nodev noexec nosuid cpuacct
+    mkdir /acct/uid
+
+    # root memory control cgroup, used by lmkd
+    mkdir /dev/memcg 0700 root system
+    mount cgroup none /dev/memcg nodev noexec nosuid memory
+    # app mem cgroups, used by activity manager, lmkd and zygote
+    mkdir /dev/memcg/apps/ 0755 system system
+    # cgroup for system_server and surfaceflinger
+    mkdir /dev/memcg/system 0550 system system
+
     start ueventd
 
 on init
@@ -51,46 +62,45 @@ on init
     # Link /vendor to /system/vendor for devices without a vendor partition.
     symlink /system/vendor /vendor
 
-    # Mount cgroup mount point for cpu accounting
-    mount cgroup none /acct cpuacct
-    mkdir /acct/uid
-
     # MirrorLink permission
     mkdir /dev/socket/mlaudio 0770 audioserver system
 
     # Create energy-aware scheduler tuning nodes
     mkdir /dev/stune
-    mount cgroup none /dev/stune schedtune
+    mount cgroup none /dev/stune nodev noexec nosuid schedtune
     mkdir /dev/stune/foreground
     mkdir /dev/stune/background
     mkdir /dev/stune/top-app
+    mkdir /dev/stune/rt
     chown system system /dev/stune
     chown system system /dev/stune/foreground
     chown system system /dev/stune/background
     chown system system /dev/stune/top-app
+    chown system system /dev/stune/rt
     chown system system /dev/stune/tasks
     chown system system /dev/stune/foreground/tasks
     chown system system /dev/stune/background/tasks
     chown system system /dev/stune/top-app/tasks
+    chown system system /dev/stune/rt/tasks
     chmod 0664 /dev/stune/tasks
     chmod 0664 /dev/stune/foreground/tasks
     chmod 0664 /dev/stune/background/tasks
     chmod 0664 /dev/stune/top-app/tasks
+    chmod 0664 /dev/stune/rt/tasks
 
     # Mount staging areas for devices managed by vold
     # See storage config details at http://source.android.com/tech/storage/
     mount tmpfs tmpfs /mnt mode=0755,uid=0,gid=1000
     restorecon_recursive /mnt
 
-    mount configfs none /config
-    chmod 0774 /config/sdcardfs
+    mount configfs none /config nodev noexec nosuid
+    chmod 0770 /config/sdcardfs
     chown system package_info /config/sdcardfs
 
     mkdir /mnt/secure 0700 root root
     # Samsung ODE >>>
     # Create private mountpoint so we can MS_MOVE from staging
     mount tmpfs tmpfs /mnt/secure mode=0700,uid=0,gid=0
-
     # Directory for staging bindmounts
     mkdir /mnt/secure/staging 0700 root root
     restorecon_recursive /mnt/secure/staging
@@ -124,12 +134,6 @@ on init
     symlink /storage/self/primary /sdcard
     symlink /storage/self/primary /mnt/sdcard
     symlink /mnt/user/0/primary /mnt/runtime/default/self/primary
-
-    # root memory control cgroup, used by lmkd
-    mkdir /dev/memcg 0700 root system
-    mount cgroup none /dev/memcg memory
-    # app mem cgroups, used by activity manager, lmkd and zygote
-    mkdir /dev/memcg/apps/ 0755 system system
 
     write /proc/sys/kernel/panic_on_oops 1
     write /proc/sys/kernel/hung_task_timeout_secs 0
@@ -173,7 +177,7 @@ on init
 
     # Create cgroup mount points for process groups
     mkdir /dev/cpuctl
-    mount cgroup none /dev/cpuctl cpu
+    mount cgroup none /dev/cpuctl nodev noexec nosuid cpu
     chown system system /dev/cpuctl
     chown system system /dev/cpuctl/tasks
     chmod 0666 /dev/cpuctl/tasks
@@ -182,7 +186,7 @@ on init
 
     # sets up initial cpusets for ActivityManager
     mkdir /dev/cpuset
-    mount cpuset none /dev/cpuset
+    mount cpuset none /dev/cpuset nodev noexec nosuid
 
     # this ensures that the cpusets are present and usable, but the device's
     # init.rc must actually set the correct cpus
@@ -200,6 +204,12 @@ on init
     copy /dev/cpuset/cpus /dev/cpuset/system-background/cpus
     copy /dev/cpuset/mems /dev/cpuset/system-background/mems
 
+    # restricted is for system tasks that are being throttled
+    # due to screen off.
+    mkdir /dev/cpuset/restricted
+    copy /dev/cpuset/cpus /dev/cpuset/restricted/cpus
+    copy /dev/cpuset/mems /dev/cpuset/restricted/mems
+
     mkdir /dev/cpuset/top-app
     copy /dev/cpuset/cpus /dev/cpuset/top-app/cpus
     copy /dev/cpuset/mems /dev/cpuset/top-app/mems
@@ -210,11 +220,13 @@ on init
     chown system system /dev/cpuset/background
     chown system system /dev/cpuset/system-background
     chown system system /dev/cpuset/top-app
+    chown system system /dev/cpuset/restricted
     chown system system /dev/cpuset/tasks
     chown system system /dev/cpuset/foreground/tasks
     chown system system /dev/cpuset/background/tasks
     chown system system /dev/cpuset/system-background/tasks
     chown system system /dev/cpuset/top-app/tasks
+    chown system system /dev/cpuset/restricted/tasks
 
     # set system-background to 0775 so SurfaceFlinger can touch it
     chmod 0775 /dev/cpuset/system-background
@@ -223,6 +235,7 @@ on init
     chmod 0664 /dev/cpuset/background/tasks
     chmod 0664 /dev/cpuset/system-background/tasks
     chmod 0664 /dev/cpuset/top-app/tasks
+    chmod 0664 /dev/cpuset/restricted/tasks
     chmod 0664 /dev/cpuset/tasks
 
 
@@ -378,7 +391,6 @@ on post-fs
     # Make sure /sys/kernel/debug (if present) is labeled properly
     # Note that tracefs may be mounted under debug, so we need to cross filesystems
     restorecon --recursive --cross-filesystems /sys/kernel/debug
-    chmod 0755 /sys/kernel/debug/tracing
 
     # We chown/chmod /cache again so because mount is run as root + defaults
     chown system cache /cache
@@ -423,10 +435,15 @@ on post-fs
     start scs
 
 on late-fs
+    # Ensure that tracefs has the correct permissions.
+    # This does not work correctly if it is called in post-fs.
+    chmod 0755 /sys/kernel/debug/tracing
+
     # HALs required before storage encryption can get unlocked (FBE/FDE)
     class_start early_hal
 
 on post-fs-data
+
     # We chown/chmod /data again so because mount is run as root + defaults
     chown system system /data
     chmod 0771 /data
@@ -648,7 +665,7 @@ on post-fs-data
 
 # smart switch mobile
     mkdir /efs/ssm 0770 system system
-    
+
     # super slow motion
     mkdir /data/misc/mediacodec/fruc_files 0700 mediacodec mediacodec
     mkdir /data/misc/mediacodec/fruc_assets 0700 mediacodec mediacodec
@@ -721,7 +738,7 @@ on boot
 
     # Tweak background writeout
     write /proc/sys/vm/dirty_expire_centisecs 200
-    write /proc/sys/vm/dirty_background_ratio  5
+    # write /proc/sys/vm/dirty_background_ratio  5
 
     # Switch Device
     chown system radio /sys/class/sec/switch/usb_sel
@@ -1204,7 +1221,7 @@ on charger
     chmod 0660 /sys/class/power_supply/battery/cisd_fullcaprep_max
     chown system radio /sys/class/power_supply/battery/cisd_data
     chmod 0660 /sys/class/power_supply/battery/cisd_data
-	chown system system /efs/FactoryApp/cisd_fullcaprep_max
+    chown system system /efs/FactoryApp/cisd_fullcaprep_max
     chmod 0640 /efs/FactoryApp/cisd_fullcaprep_max
     chown system radio /sys/class/power_supply/battery/cisd_data_efs_path
     chmod 0660 /sys/class/power_supply/battery/cisd_data_efs_path
@@ -1215,7 +1232,7 @@ on charger
     mkdir /efs/Battery 0775 radio system
     chown radio system /efs/Battery
     chmod 0775 /efs/Battery
-	chown radio system /efs/Battery/batt_capacity_max
+    chown radio system /efs/Battery/batt_capacity_max
     chmod 0664 /efs/Battery/batt_capacity_max
     copy /system/vendor/firmware/battery_data.dat /efs/Battery/battery_data.dat
     chmod 0400 /efs/Battery/battery_data.dat
@@ -1463,4 +1480,3 @@ on property:persist.security.tlc.otp=1
 
 on property:sys.sf.restart=1
     restart surfaceflinger
-
