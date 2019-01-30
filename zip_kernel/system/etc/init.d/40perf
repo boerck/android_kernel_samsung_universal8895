@@ -1,30 +1,8 @@
 #!/system/bin/sh
 
-# Configure values based on universal9810
-## EAS ##
-echo 0 > /dev/stune/schedtune.boost
-echo 10 > /dev/stune/top-app/schedtune.boost
-echo 1 > /dev/stune/top-app/schedtune.prefer_idle
-echo 1 > /dev/stune/foreground/schedtune.prefer_idle
-echo -10 > /dev/stune/background/schedtune.boost
-
-## UFS ##
-echo 256 > /sys/block/sda/queue/nr_requests
-echo 0 > /sys/block/sda/queue/rq_affinity;
 # trim #
 busybox fstrim -v /cache > /data/trim.log;
 busybox fstrim -v /data >> /data/trim.log;
-
-## schedutil ##
-# little #
-echo "schedutil" > /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor
-echo 100000 > /sys/devices/system/cpu/cpufreq/policy0/schedutil/up_rate_limit_us
-echo 50000 > /sys/devices/system/cpu/cpufreq/policy0/schedutil/down_rate_limit_us
-
-# big #
-echo "schedutil" > /sys/devices/system/cpu/cpu4/cpufreq/scaling_governor
-echo 50000 > /sys/devices/system/cpu/cpufreq/policy4/schedutil/up_rate_limit_us
-echo 100000 > /sys/devices/system/cpu/cpufreq/policy4/schedutil/down_rate_limit_us
 
 # Block unwanted wakelocks
 WAKELOCKS="12860000.decon_f;ssp_comm_wake_lock;ssp_wake_lock;tsp_wakelock;umts_ipc0;umts_ipc1"

@@ -21,7 +21,6 @@ on property:persist.spectrum.profile=0
    write /dev/cpuset/background/cpus 0-1
    write /dev/stune/schedtune.boost 0
    write /dev/stune/top-app/schedtune.boost 10
-   write /sys/block/sda/queue/read_ahead_kb 256
    write /proc/sys/vm/swappiness 80
    write /sys/devices/platform/13900000.mali/clock 0
 
@@ -34,7 +33,6 @@ on property:persist.spectrum.profile=1
    write /dev/cpuset/background/cpus 0-2
    write /dev/stune/schedtune.boost 0
    write /dev/stune/top-app/schedtune.boost 10
-   write /sys/block/sda/queue/read_ahead_kb 512
    write /proc/sys/vm/swappiness 150
    write /sys/devices/platform/13900000.mali/clock 0
 
@@ -47,7 +45,6 @@ on property:persist.spectrum.profile=2
    write /dev/cpuset/background/cpus 0-1
    write /dev/stune/schedtune.boost 0
    write /dev/stune/top-app/schedtune.boost 0
-   write /sys/block/sda/queue/read_ahead_kb 128
    write /proc/sys/vm/swappiness 60
    write /sys/devices/platform/13900000.mali/clock 0
 
@@ -61,6 +58,5 @@ on property:persist.spectrum.profile=3
    write /dev/cpuset/system-background/cpus 0-3
    write /dev/stune/schedtune.boost 50
    write /dev/stune/top-app/schedtune.boost 60
-   write /sys/block/sda/queue/read_ahead_kb 1024
    write /proc/sys/vm/swappiness 150
    write /sys/devices/platform/13900000.mali/clock 572
