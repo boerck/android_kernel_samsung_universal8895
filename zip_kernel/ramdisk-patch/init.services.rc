@@ -19,7 +19,6 @@ on boot
 	start sysinit_cm
 
 on property:sys.boot_completed=1
-	stop proca
 	stop secure_storage
 	exec u:r:init:s0 -- /sbin/rz_kernel.sh
 	exec u:r:su:s0 root root -- /sbin/rz_kernel.sh
