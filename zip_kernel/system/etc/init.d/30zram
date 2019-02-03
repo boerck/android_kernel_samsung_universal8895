@@ -5,6 +5,28 @@ while [[ $(getprop sys.boot_completed) != "1" ]]; do
 	sleep 1;
 done
 
+# Enable zswap
+echo "20" > /sys/module/zswap/parameters/max_pool_percent;
+echo "1" > /sys/module/zswap/parameters/enabled;
+
+# Set maximum swappiness
+echo 150 > /proc/sys/vm/swappiness;
+
+# Set page-cluster to lowest to maximize performance
+echo 0 > /proc/sys/vm/page-cluster;
+
+# Do we use vnswap?
+vnswap_proppath=/data/property/persist.vnswap.enabled;
+if [ ! -e $vnswap_proppath ]; then
+	echo "false" > $vnswap_proppath;
+	chmod 600 $vnswap_proppath;
+else
+	if [[ $(cat $vnswap_proppath) = "true" ]]; then
+		start swapon;
+		exit 1;
+	fi;
+fi;
+
 zram_pos=""
 
 # How many CPU cores do we have? (get fixed numer of one for now)
@@ -30,9 +52,6 @@ for i in $zram_pos; do
 	echo $i > /sys/class/zram-control/hot_remove;
 done;
 
-# Set page-cluster to lowest to maximize performance
-echo 0 > /proc/sys/vm/page-cluster;
-
 # Calculate memory to use for zram (1/2 of ram)
 totalmem=$(busybox free | grep -e "^Mem:" | busybox sed -e 's/^Mem: *//' -e 's/  *.*//')
 echo "Total RAM available: $totalmem"
@@ -48,9 +67,3 @@ for i in $(busybox seq 0 $(($num_cpu - 1))); do
 	swapon -p 05 /dev/block/zram$i;
 done;
 
-# Enable zswap after zram init is done
-echo "20" > /sys/module/zswap/parameters/max_pool_percent;
-echo "1" > /sys/module/zswap/parameters/enabled;
-
-# Set maximum swappiness
-echo 150 > /proc/sys/vm/swappiness;

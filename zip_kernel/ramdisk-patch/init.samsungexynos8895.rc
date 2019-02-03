@@ -938,4 +938,4 @@ service swapon /sbin/sswap -s -f 2048
     user root
     group root
     seclabel u:r:sswap:s0
-    oneshot
+    disabled
