@@ -14,13 +14,13 @@ on property:sys.boot_completed=1
 
 # Balance (default profile)
 on property:persist.spectrum.profile=0
-   write /sys/devices/system/cpu/cpufreq/policy0/scaling_max_freq 1456000
-   write /sys/devices/system/cpu/cpufreq/policy4/scaling_max_freq 2002000
+   write /sys/devices/system/cpu/cpufreq/policy0/scaling_max_freq 1690000
+   write /sys/devices/system/cpu/cpufreq/policy4/scaling_max_freq 2314000
    write /dev/cpuset/top-app/cpus 0-5
    write /dev/cpuset/foreground/cpus 0-5
    write /dev/cpuset/background/cpus 0-1
-   write /dev/stune/schedtune.boost 0
    write /dev/stune/top-app/schedtune.boost 10
+   write /dev/stune/foreground/schedtune.boost 0
    write /proc/sys/vm/swappiness 80
    write /sys/devices/platform/13900000.mali/clock 0
 
@@ -31,8 +31,8 @@ on property:persist.spectrum.profile=1
    write /dev/cpuset/top-app/cpus 0-7
    write /dev/cpuset/foreground/cpus 0-2,4-7
    write /dev/cpuset/background/cpus 0-2
-   write /dev/stune/schedtune.boost 0
    write /dev/stune/top-app/schedtune.boost 10
+   write /dev/stune/foreground/schedtune.boost 10
    write /proc/sys/vm/swappiness 150
    write /sys/devices/platform/13900000.mali/clock 0
 
@@ -43,8 +43,8 @@ on property:persist.spectrum.profile=2
    write /dev/cpuset/top-app/cpus 0-4
    write /dev/cpuset/foreground/cpus 0-4
    write /dev/cpuset/background/cpus 0-1
-   write /dev/stune/schedtune.boost 0
    write /dev/stune/top-app/schedtune.boost 0
+   write /dev/stune/foreground/schedtune.boost 0
    write /proc/sys/vm/swappiness 60
    write /sys/devices/platform/13900000.mali/clock 0
 
@@ -56,7 +56,6 @@ on property:persist.spectrum.profile=3
    write /dev/cpuset/foreground/cpus 0-7
    write /dev/cpuset/background/cpus 0-3
    write /dev/cpuset/system-background/cpus 0-3
-   write /dev/stune/schedtune.boost 50
-   write /dev/stune/top-app/schedtune.boost 60
+   write /dev/stune/foreground/schedtune.boost 50
    write /proc/sys/vm/swappiness 150
    write /sys/devices/platform/13900000.mali/clock 572
