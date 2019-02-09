@@ -338,10 +338,6 @@ on boot
     write /sys/kernel/debug/tracing/tracing_on 0
 
 # Permission for DVFS
-    chown system radio /sys/power/cpufreq_min_limit
-    chmod 0664 /sys/power/cpufreq_min_limit
-    chown system radio /sys/power/cpufreq_max_limit
-    chmod 0664 /sys/power/cpufreq_max_limit
     chown system radio /sys/power/cpufreq_table
     chmod 0664 /sys/power/cpufreq_table
     chown system radio /sys/devices/platform/17000010.devfreq_mif/devfreq/17000010.devfreq_mif/scaling_devfreq_min
@@ -412,10 +408,6 @@ on boot
     chmod 0664 /sys/module/cpuidle/parameters/off
 
     # mali dvfs node
-    chown radio system /sys/devices/platform/13900000.mali/dvfs_min_lock
-    chmod 0664 /sys/devices/platform/13900000.mali/dvfs_min_lock
-    chown radio system /sys/devices/platform/13900000.mali/dvfs_max_lock
-    chmod 0664 /sys/devices/platform/13900000.mali/dvfs_max_lock
     chown radio system /sys/devices/platform/13900000.mali/dvfs_table
     chmod 0664 /sys/devices/platform/13900000.mali/dvfs_table
     chown radio system /sys/devices/platform/13900000.mali/clock
