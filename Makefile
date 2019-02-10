@@ -672,6 +672,10 @@ KBUILD_CFLAGS   += -mtune=exynos-m1 -mcpu=exynos-m1+crypto+fp16+crc
 endif
 endif
 
+ifeq ($(cc-name),clang)
+KBUILD_CFLAGS	+= -mno-unaligned-access -mstrict-align
+endif
+
 # Tell gcc to never replace conditional load with a non-conditional one
 KBUILD_CFLAGS	+= $(call cc-option,--param=allow-store-data-races=0)
 
