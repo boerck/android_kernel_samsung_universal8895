@@ -4624,14 +4624,13 @@
 		sensing_mode = "max";
 		/* gpu cooling related table */
 		/* flags, driver_data(index), frequency */
-		gpu_idx_num = <7>;
+		gpu_idx_num = <6>;
 		gpu_cooling_table = < 0 0 572000
 				      0 1 546000
 				      0 2 455000
 				      0 3 385000
 				      0 4 338000
-				      0 5 260000
-				      0 6 TABLE_END>;
+				      0 5 TABLE_END>;
 		#include "exynos8895-tmu-sensor-conf.dtsi"
 	};
 
