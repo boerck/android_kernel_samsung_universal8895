@@ -49,6 +49,7 @@
 #include <linux/slab.h>
 #include <linux/file.h>
 #include <linux/sizes.h>
+#include <linux/kthread.h>
 
 #ifdef CONFIG_MALI_FPGA_BUS_LOGGER
 #include <linux/bus_logger.h>
@@ -603,12 +604,16 @@ struct kbase_atom_dependency_systrace {
  *                         snapshot of the age_count counter in kbase context.
  */
 struct kbase_jd_atom {
+	/* kthread work list */
 	struct work_struct work;
+	struct kthread_work event_work;
+	struct kthread_work job_done_work;
+	struct kthread_work js_work;
+
 	ktime_t start_timestamp;
 
 	struct base_jd_udata udata;
 	struct kbase_context *kctx;
-
 	struct list_head dep_head[2];
 	struct list_head dep_item[2];
 	const struct kbase_jd_atom_dependency dep[2];
@@ -2026,7 +2031,12 @@ struct kbase_context {
 	struct list_head event_coalesce_list;
 	struct mutex event_mutex;
 	atomic_t event_closed;
+
+	/* workers */
+	struct kthread_worker worker;
+	struct task_struct *worker_thread;
 	struct workqueue_struct *event_workq;
+	struct kthread_work jit_work;
 	atomic_t event_count;
 	int event_coalesce_count;
 
@@ -2145,7 +2155,6 @@ struct kbase_context {
 	struct list_head jit_pool_head;
 	struct list_head jit_destroy_head;
 	struct mutex jit_evict_lock;
-	struct work_struct jit_work;
 
 	struct list_head jit_atoms_head;
 	struct list_head jit_pending_alloc;

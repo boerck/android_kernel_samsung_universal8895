@@ -401,6 +401,7 @@ static int kbase_open(struct inode *inode, struct file *filp)
 {
 	struct kbase_device *kbdev = NULL;
 	struct kbase_context *kctx;
+	struct sched_param param = { .sched_priority = 20 };
 	int ret = 0;
 #ifdef CONFIG_DEBUG_FS
 	char kctx_name[64];
@@ -477,6 +478,19 @@ static int kbase_open(struct inode *inode, struct file *filp)
 			dev_warn(kbdev->dev, "couldn't add kctx to kctx_list\n");
 		}
 	}
+
+	init_kthread_worker(&kctx->worker);
+
+	kctx->worker_thread = kthread_run_perf_critical(kthread_worker_fn,
+				&kctx->worker, "mali_kctx_worker");
+
+	if (IS_ERR(kctx->worker_thread)) {
+		pr_err("unable to start mali worker thread\n");
+		goto out;
+	}
+
+	sched_setscheduler(kctx->worker_thread, SCHED_FIFO, &param);
+
 	return 0;
 
  out:

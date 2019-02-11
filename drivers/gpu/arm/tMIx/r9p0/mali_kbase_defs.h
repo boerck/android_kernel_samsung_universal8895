@@ -1443,12 +1443,9 @@ struct kbase_context {
 	struct list_head event_coalesce_list;
 	struct mutex event_mutex;
 	atomic_t event_closed;
-
-	/* workers */
 	struct kthread_worker worker;
 	struct task_struct *worker_thread;
 	struct workqueue_struct *event_workq;
-	struct kthread_work jit_work;
 	atomic_t event_count;
 	int event_coalesce_count;
 
@@ -1621,6 +1618,7 @@ struct kbase_context {
 	struct list_head jit_pool_head;
 	struct list_head jit_destroy_head;
 	struct mutex jit_evict_lock;
+	struct work_struct jit_work;
 
 	/* A list of the JIT soft-jobs in submission order
 	 * (protected by kbase_jd_context.lock)
