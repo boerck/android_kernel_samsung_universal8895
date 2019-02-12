@@ -1078,7 +1078,7 @@ static int kbase_open(struct inode *inode, struct file *filp)
 {
 	struct kbase_device *kbdev = NULL;
 	struct kbase_context *kctx;
-	struct sched_param param = { .sched_priority = 16 };
+	struct sched_param param = { .sched_priority = 20 };
 	int ret = 0;
 #ifdef CONFIG_DEBUG_FS
 	char kctx_name[64];
@@ -1159,7 +1159,7 @@ static int kbase_open(struct inode *inode, struct file *filp)
 		goto out;
 	}
 
-	sched_setscheduler(kctx->worker_thread, SCHED_FIFO, &param);
+	sched_setscheduler_nocheck(kctx->worker_thread, SCHED_FIFO, &param);
 
 	return 0;
 

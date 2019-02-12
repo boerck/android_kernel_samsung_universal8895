@@ -3971,7 +3971,7 @@ static void decon_destroy_update_thread(struct decon_device *decon)
 
 static int decon_create_update_thread(struct decon_device *decon, char *name)
 {
-	struct sched_param param = { .sched_priority = 16 };
+	struct sched_param param = { .sched_priority = 20 };
 
 	INIT_LIST_HEAD(&decon->up.list);
 	INIT_LIST_HEAD(&decon->up.saved_list);
@@ -3985,7 +3985,7 @@ static int decon_create_update_thread(struct decon_device *decon, char *name)
 		return PTR_ERR(decon->up.thread);
 	}
 
-	sched_setscheduler(decon->up.thread, SCHED_FIFO, &param);
+	sched_setscheduler_nocheck(decon->up.thread, SCHED_FIFO, &param);
 
 	init_kthread_work(&decon->up.work, decon_update_regs_handler);
 
