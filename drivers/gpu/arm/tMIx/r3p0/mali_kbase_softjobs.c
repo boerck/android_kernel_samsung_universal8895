@@ -334,10 +334,10 @@ static void kbase_fence_cancel_wait(struct kbase_jd_atom *katom)
 }
 #endif /* CONFIG_SYNC */
 
-static void kbasep_soft_event_complete_job(struct work_struct *work)
+static void kbasep_soft_event_complete_job(struct kthread_work *work)
 {
 	struct kbase_jd_atom *katom = container_of(work, struct kbase_jd_atom,
-			work);
+			job_done_work);
 	struct kbase_context *kctx = katom->kctx;
 	int resched;
 
@@ -366,10 +366,10 @@ void kbasep_complete_triggered_soft_events(struct kbase_context *kctx, u64 evt)
 				list_del(&katom->queue);
 
 				katom->event_code = BASE_JD_EVENT_DONE;
-				INIT_WORK(&katom->work,
+				init_kthread_work(&katom->job_done_work,
 					  kbasep_soft_event_complete_job);
-				queue_work(kctx->jctx.job_done_wq,
-					   &katom->work);
+				queue_kthread_work(&kctx->worker,
+					   &katom->job_done_work);
 			} else {
 				/* There are still other waiting jobs, we cannot
 				 * cancel the timer yet.
@@ -478,10 +478,10 @@ static void kbase_fence_debug_wait_timeout(struct kbase_jd_atom *katom)
 
 struct kbase_fence_debug_work {
 	struct kbase_jd_atom *katom;
-	struct work_struct work;
+	struct kthread_work work;
 };
 
-static void kbase_fence_debug_wait_timeout_worker(struct work_struct *work)
+static void kbase_fence_debug_wait_timeout_worker(struct kthread_work *work)
 {
 	struct kbase_fence_debug_work *w = container_of(work,
 			struct kbase_fence_debug_work, work);
@@ -507,8 +507,8 @@ static void kbase_fence_debug_timeout(struct kbase_jd_atom *katom)
 	/* Ignore allocation failure. */
 	if (work) {
 		work->katom = katom;
-		INIT_WORK(&work->work, kbase_fence_debug_wait_timeout_worker);
-		queue_work(kctx->jctx.job_done_wq, &work->work);
+		init_kthread_work(&work->work, kbase_fence_debug_wait_timeout_worker);
+		queue_kthread_work(&kctx->worker, &work->work);
 	}
 }
 #endif /* CONFIG_MALI_FENCE_DEBUG */
@@ -544,8 +544,8 @@ void kbasep_soft_job_timeout_worker(unsigned long data)
 			list_del(&katom->queue);
 
 			katom->event_code = BASE_JD_EVENT_JOB_CANCELLED;
-			INIT_WORK(&katom->work, kbasep_soft_event_complete_job);
-			queue_work(kctx->jctx.job_done_wq, &katom->work);
+			init_kthread_work(&katom->job_done_work, kbasep_soft_event_complete_job);
+			queue_kthread_work(&kctx->worker, &katom->job_done_work);
 			break;
 #ifdef CONFIG_MALI_FENCE_DEBUG
 		case BASE_JD_REQ_SOFT_FENCE_WAIT:

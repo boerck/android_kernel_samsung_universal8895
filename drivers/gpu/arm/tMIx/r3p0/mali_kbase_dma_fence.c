@@ -39,7 +39,7 @@
 static DEFINE_SPINLOCK(kbase_dma_fence_lock);
 
 static void
-kbase_dma_fence_work(struct work_struct *pwork);
+kbase_dma_fence_work(struct kthread_work *pwork);
 
 static void
 kbase_dma_fence_waiters_add(struct kbase_jd_atom *katom)
@@ -182,8 +182,8 @@ kbase_dma_fence_queue_work(struct kbase_jd_atom *katom)
 	struct kbase_context *kctx = katom->kctx;
 	bool ret;
 
-	INIT_WORK(&katom->work, kbase_dma_fence_work);
-	ret = queue_work(kctx->dma_fence.wq, &katom->work);
+	init_kthread_work(&katom->fence_work, kbase_dma_fence_work);
+	ret = queue_kthread_work(&kctx->worker, &katom->work);
 	/* Warn if work was already queued, that should not happen. */
 	WARN_ON(!ret);
 }
@@ -281,12 +281,12 @@ kbase_dma_fence_cancel_atom(struct kbase_jd_atom *katom)
  * This function will clean and mark all dependencies as satisfied
  */
 static void
-kbase_dma_fence_work(struct work_struct *pwork)
+kbase_dma_fence_work(struct kthread_work *pwork)
 {
 	struct kbase_jd_atom *katom;
 	struct kbase_jd_context *ctx;
 
-	katom = container_of(pwork, struct kbase_jd_atom, work);
+	katom = container_of(pwork, struct kbase_jd_atom, fence_work);
 	ctx = &katom->kctx->jctx;
 
 	mutex_lock(&ctx->lock);
