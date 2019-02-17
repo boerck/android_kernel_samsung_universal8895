@@ -18,7 +18,7 @@ on property:persist.spectrum.profile=0
    write /sys/devices/system/cpu/cpufreq/policy4/scaling_max_freq 2314000
    write /dev/cpuset/foreground/cpus 0-3,6-7
    write /dev/cpuset/background/cpus 0-1
-   write /dev/stune/top-app/schedtune.boost 10
+   write /dev/stune/top-app/schedtune.sched_boost 10
    write /proc/sys/vm/swappiness 80
    write /sys/kernel/gpu/gpu_max_clock 572
    write /sys/kernel/gpu/gpu_min_clock 338
@@ -29,7 +29,7 @@ on property:persist.spectrum.profile=1
    write /sys/devices/system/cpu/cpufreq/policy4/scaling_max_freq 2314000
    write /dev/cpuset/foreground/cpus 0-7
    write /dev/cpuset/background/cpus 0-2
-   write /dev/stune/top-app/schedtune.boost 10
+   write /dev/stune/top-app/schedtune.sched_boost 10
    write /proc/sys/vm/swappiness 150
    write /sys/devices/platform/13900000.mali/clock 0
    write /sys/kernel/gpu/gpu_max_clock 572
@@ -41,7 +41,7 @@ on property:persist.spectrum.profile=2
    write /sys/devices/system/cpu/cpufreq/policy4/scaling_max_freq 1469000
    write /dev/cpuset/foreground/cpus 0-4
    write /dev/cpuset/background/cpus 0-1
-   write /dev/stune/top-app/schedtune.boost 0
+   write /dev/stune/top-app/schedtune.sched_boost 0
    write /proc/sys/vm/swappiness 60
    write /sys/devices/platform/13900000.mali/clock 0
    write /sys/kernel/gpu/gpu_max_clock 338
@@ -53,7 +53,7 @@ on property:persist.spectrum.profile=3
    write /sys/devices/system/cpu/cpufreq/policy4/scaling_max_freq 2314000
    write /dev/cpuset/foreground/cpus 0-7
    write /dev/cpuset/background/cpus 0-3
-   write /dev/stune/top-app/schedtune.boost 10
+   write /dev/stune/top-app/schedtune.sched_boost 10
    write /proc/sys/vm/swappiness 150
    write /sys/kernel/gpu/gpu_max_clock 572
    write /sys/kernel/gpu/gpu_min_clock 385
