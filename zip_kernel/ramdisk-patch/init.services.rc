@@ -27,6 +27,11 @@ on init
     write /sys/devices/system/cpu/cpufreq/policy4/pwrutilx/up_rate_limit_us 500
     write /sys/devices/system/cpu/cpufreq/policy4/pwrutilx/down_rate_limit_us 20000
 
+    # Set input boost
+    write /sys/module/cpu_boost/parameters/dynamic_stune_boost 20
+    write /sys/module/cpu_boost/parameters/input_boost_ms 100
+    write /sys/module/cpu_boost/parameters/input_boost_freq "0:1053000 1:0 2:0 3:0 4:1066000 5:0 6:0 7:0"
+
 on fs
 
 on late-fs
