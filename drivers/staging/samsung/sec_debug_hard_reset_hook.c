@@ -121,7 +121,7 @@ static bool is_gpio_keys_all_pressed(void)
 }
 
 #ifdef CONFIG_DYNAMIC_FSYNC
-void sync_filesystems(int wait);
+void sync_filesystems(void);
 #endif
 
 static enum hrtimer_restart hard_reset_hook_callback(struct hrtimer *hrtimer)
@@ -133,8 +133,7 @@ static enum hrtimer_restart hard_reset_hook_callback(struct hrtimer *hrtimer)
 
 #ifdef CONFIG_DYNAMIC_FSYNC
 	/* Do filesystem sync on reboot in case fsync is disabled */
-	sync_filesystems(0);
-	sync_filesystems(1);
+	sync_filesystems();
 #endif
 
 	pr_err("Hard Reset\n");

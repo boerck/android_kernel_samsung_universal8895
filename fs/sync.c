@@ -350,9 +350,15 @@ static void fdatawait_one_bdev(struct block_device *bdev, void *arg)
 }
 
 #ifdef CONFIG_DYNAMIC_FSYNC
-void sync_filesystems(int wait)
+void sync_filesystems(void)
 {
+	int nowait = 0, wait = 1;
+
+	iterate_supers(sync_inodes_one_sb, NULL);
+	iterate_supers(sync_fs_one_sb, &nowait);
 	iterate_supers(sync_fs_one_sb, &wait);
+	iterate_bdevs(fdatawrite_one_bdev, NULL);
+	iterate_bdevs(fdatawait_one_bdev, NULL);
 }
 EXPORT_SYMBOL_GPL(sync_filesystems);
 #endif

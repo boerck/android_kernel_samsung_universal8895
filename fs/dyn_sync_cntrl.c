@@ -106,11 +106,10 @@ static struct attribute_group dyn_fsync_active_attr_group =
 
 static struct kobject *dyn_fsync_kobj;
 
-extern void sync_filesystems(int wait);
+extern void sync_filesystems(void);
 static void dyn_fsync_force_flush(void)
 {
-	sync_filesystems(0);
-	sync_filesystems(1);
+	sync_filesystems();
 }
 
 static int fb_notifier_cb(struct notifier_block *nb,
