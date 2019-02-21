@@ -2273,7 +2273,7 @@ void kbase_jit_debugfs_init(struct kbase_context *kctx)
  * This function does the work of freeing JIT allocations whose physical
  * backing has been released.
  */
-static void kbase_jit_destroy_worker(struct work_struct *work)
+static void kbase_jit_destroy_worker(struct kthread_work *work)
 {
 	struct kbase_context *kctx;
 	struct kbase_va_region *reg;
@@ -2303,7 +2303,7 @@ int kbase_jit_init(struct kbase_context *kctx)
 	INIT_LIST_HEAD(&kctx->jit_active_head);
 	INIT_LIST_HEAD(&kctx->jit_pool_head);
 	INIT_LIST_HEAD(&kctx->jit_destroy_head);
-	INIT_WORK(&kctx->jit_work, kbase_jit_destroy_worker);
+	init_kthread_work(&kctx->jit_work, kbase_jit_destroy_worker);
 
 	INIT_LIST_HEAD(&kctx->jit_pending_alloc);
 	INIT_LIST_HEAD(&kctx->jit_atoms_head);
@@ -2589,7 +2589,7 @@ void kbase_jit_backing_lost(struct kbase_va_region *reg)
 	 */
 	list_move(&reg->jit_node, &kctx->jit_destroy_head);
 
-	schedule_work(&kctx->jit_work);
+	queue_kthread_work(&kctx->worker, &kctx->jit_work);
 }
 
 bool kbase_jit_evict(struct kbase_context *kctx)
@@ -2625,7 +2625,7 @@ void kbase_jit_term(struct kbase_context *kctx)
 	 * Flush the freeing of allocations whose backing has been freed
 	 * (i.e. everything in jit_destroy_head).
 	 */
-	cancel_work_sync(&kctx->jit_work);
+	kthread_cancel_work_sync(&kctx->jit_work);
 
 	kbase_gpu_vm_lock(kctx);
 	mutex_lock(&kctx->jit_evict_lock);
