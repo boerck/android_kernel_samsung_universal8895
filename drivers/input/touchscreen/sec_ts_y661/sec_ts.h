@@ -1,4 +1,4 @@
-/* drivers/input/touchscreen/sec_ts.h
+/* drivers/input/touchscreen/sec_ts_y661.h
  *
  * Copyright (C) 2015 Samsung Electronics Co., Ltd.
  * http://www.samsungsemi.com/
@@ -62,7 +62,7 @@
 #define SECURE_TOUCH_DISABLE	0
 #endif
 
-#define SEC_TS_I2C_NAME		"sec_ts"
+#define SEC_TS_I2C_NAME		"sec_ts_y661"
 #define SEC_TS_DEVICE_NAME	"SEC_TS"
 
 #define USE_OPEN_CLOSE
@@ -497,7 +497,7 @@ typedef enum {
 #define SEC_TS_SPONGE_EVENT_PRESSURE_TOUCHED		(1 << 6)
 #define SEC_TS_SPONGE_EVENT_PRESSURE_RELEASED		(1 << 7)
 
-enum sec_ts_cover_id {
+enum sec_ts_y661_cover_id {
 	SEC_TS_FLIP_WALLET = 0,
 	SEC_TS_VIEW_COVER,
 	SEC_TS_COVER_NOTHING1,
@@ -534,7 +534,7 @@ enum tsp_hw_parameter {
 #define TEST_MODE_READ_CHANNEL		true
 
 /* factory test mode */
-struct sec_ts_test_mode {
+struct sec_ts_y661_test_mode {
 	u8 type;
 	short min;
 	short max;
@@ -542,7 +542,7 @@ struct sec_ts_test_mode {
 	bool frame_channel;
 };
 
-struct sec_ts_fw_file {
+struct sec_ts_y661_fw_file {
 	u8 *data;
 	u32 pos;
 	size_t size;
@@ -553,7 +553,7 @@ struct sec_ts_fw_file {
  * MSB <-------------------> LSB
  * read 0xE4
  * mapping sequnce : LSB -> MSB
- * struct sec_ts_test_result {
+ * struct sec_ts_y661_test_result {
  * * assy : front + OCTA assay
  * * module : only OCTA
  *	 union {
@@ -567,7 +567,7 @@ struct sec_ts_fw_file {
  *	 };
  *};
  */
-struct sec_ts_test_result {
+struct sec_ts_y661_test_result {
 	union {
 		struct {
 			u8 assy_count:2;
@@ -580,7 +580,7 @@ struct sec_ts_test_result {
 };
 
 /* 8 byte */
-struct sec_ts_gesture_status {
+struct sec_ts_y661_gesture_status {
 	u8 eid:2;
 	u8 stype:4;
 	u8 sf:2;
@@ -595,7 +595,7 @@ struct sec_ts_gesture_status {
 } __attribute__ ((packed));
 
 /* 8 byte */
-struct sec_ts_event_status {
+struct sec_ts_y661_event_status {
 	u8 eid:2;
 	u8 stype:4;
 	u8 sf:2;
@@ -610,7 +610,7 @@ struct sec_ts_event_status {
 } __attribute__ ((packed));
 
 /* 8 byte */
-struct sec_ts_event_coordinate {
+struct sec_ts_y661_event_coordinate {
 	u8 eid:2;
 	u8 tid:4;
 	u8 tchsta:2;
@@ -627,7 +627,7 @@ struct sec_ts_event_coordinate {
 } __attribute__ ((packed));
 
 /* not fixed */
-struct sec_ts_coordinate {
+struct sec_ts_y661_coordinate {
 	u8 id;
 	u8 ttype;
 	u8 action;
@@ -646,7 +646,7 @@ struct sec_ts_coordinate {
 };
 
 
-struct sec_ts_data {
+struct sec_ts_y661_data {
 	u32 isr_pin;
 
 	u32 crc_addr;
@@ -660,8 +660,8 @@ struct sec_ts_data {
 	struct input_dev *input_dev;
 	struct input_dev *input_dev_pad;
 	struct input_dev *input_dev_touch;
-	struct sec_ts_plat_data *plat_data;
-	struct sec_ts_coordinate coord[MAX_SUPPORT_TOUCH_COUNT + MAX_SUPPORT_HOVER_COUNT];
+	struct sec_ts_y661_plat_data *plat_data;
+	struct sec_ts_y661_coordinate coord[MAX_SUPPORT_TOUCH_COUNT + MAX_SUPPORT_HOVER_COUNT];
 
 	struct timeval time_pressed[MAX_SUPPORT_TOUCH_COUNT + MAX_SUPPORT_HOVER_COUNT];
 	struct timeval time_released[MAX_SUPPORT_TOUCH_COUNT + MAX_SUPPORT_HOVER_COUNT];
@@ -689,7 +689,7 @@ struct sec_ts_data {
 	int touchkey_glove_mode_status;
 	u16 touch_functions;
 	u8 charger_mode;
-	struct sec_ts_event_coordinate touchtype;
+	struct sec_ts_y661_event_coordinate touchtype;
 	bool touched[11];
 	u8 gesture_status[6];
 	u8 cal_status;
@@ -798,14 +798,14 @@ struct sec_ts_data {
 	short pressure_data[TYPE_RAWDATA_MAX][PRESSURE_CHANNEL_NUM];
 	int debug_flag;
 
-	int (*sec_ts_i2c_write)(struct sec_ts_data *ts, u8 reg, u8 *data, int len);
-	int (*sec_ts_i2c_read)(struct sec_ts_data *ts, u8 reg, u8 *data, int len);
-	int (*sec_ts_i2c_write_burst)(struct sec_ts_data *ts, u8 *data, int len);
-	int (*sec_ts_i2c_read_bulk)(struct sec_ts_data *ts, u8 *data, int len);
-	int (*sec_ts_read_sponge)(struct sec_ts_data *ts, u8 *data, int len);
+	int (*sec_ts_y661_i2c_write)(struct sec_ts_y661_data *ts, u8 reg, u8 *data, int len);
+	int (*sec_ts_y661_i2c_read)(struct sec_ts_y661_data *ts, u8 reg, u8 *data, int len);
+	int (*sec_ts_y661_i2c_write_burst)(struct sec_ts_y661_data *ts, u8 *data, int len);
+	int (*sec_ts_y661_i2c_read_bulk)(struct sec_ts_y661_data *ts, u8 *data, int len);
+	int (*sec_ts_y661_read_sponge)(struct sec_ts_y661_data *ts, u8 *data, int len);
 };
 
-struct sec_ts_plat_data {
+struct sec_ts_y661_plat_data {
 	int max_x;
 	int max_y;
 	unsigned irq_gpio;
@@ -875,44 +875,44 @@ typedef struct {
 	u32 reserved;
 } fw_chunk;
 
-int sec_ts_stop_device(struct sec_ts_data *ts);
-int sec_ts_start_device(struct sec_ts_data *ts);
-int sec_ts_set_lowpowermode(struct sec_ts_data *ts, u8 mode);
-int sec_ts_firmware_update_on_probe(struct sec_ts_data *ts, bool force_update);
-int sec_ts_firmware_update_on_hidden_menu(struct sec_ts_data *ts, int update_type);
-int sec_ts_glove_mode_enables(struct sec_ts_data *ts, int mode);
-int sec_ts_set_cover_type(struct sec_ts_data *ts, bool enable);
-int sec_ts_wait_for_ready(struct sec_ts_data *ts, unsigned int ack);
-int sec_ts_fn_init(struct sec_ts_data *ts);
-int sec_ts_read_calibration_report(struct sec_ts_data *ts);
-int sec_ts_execute_force_calibration(struct sec_ts_data *ts, int cal_mode);
-int sec_ts_fix_tmode(struct sec_ts_data *ts, u8 mode, u8 state);
-int sec_ts_release_tmode(struct sec_ts_data *ts);
-int get_tsp_nvm_data(struct sec_ts_data *ts, u8 offset);
-void set_tsp_nvm_data_clear(struct sec_ts_data *ts, u8 offset);
-int sec_ts_set_custom_library(struct sec_ts_data *ts);
+int sec_ts_y661_stop_device(struct sec_ts_y661_data *ts);
+int sec_ts_y661_start_device(struct sec_ts_y661_data *ts);
+int sec_ts_y661_set_lowpowermode(struct sec_ts_y661_data *ts, u8 mode);
+int sec_ts_y661_firmware_update_on_probe(struct sec_ts_y661_data *ts, bool force_update);
+int sec_ts_y661_firmware_update_on_hidden_menu(struct sec_ts_y661_data *ts, int update_type);
+int sec_ts_y661_glove_mode_enables(struct sec_ts_y661_data *ts, int mode);
+int sec_ts_y661_set_cover_type(struct sec_ts_y661_data *ts, bool enable);
+int sec_ts_y661_wait_for_ready(struct sec_ts_y661_data *ts, unsigned int ack);
+int sec_ts_y661_fn_init(struct sec_ts_y661_data *ts);
+int sec_ts_y661_read_calibration_report(struct sec_ts_y661_data *ts);
+int sec_ts_y661_execute_force_calibration(struct sec_ts_y661_data *ts, int cal_mode);
+int sec_ts_y661_fix_tmode(struct sec_ts_y661_data *ts, u8 mode, u8 state);
+int sec_ts_y661_release_tmode(struct sec_ts_y661_data *ts);
+int get_y661_tsp_nvm_data(struct sec_ts_y661_data *ts, u8 offset);
+void set_y661_tsp_nvm_data_clear(struct sec_ts_y661_data *ts, u8 offset);
+int sec_ts_y661_set_custom_library(struct sec_ts_y661_data *ts);
 #ifdef SEC_TS_SUPPORT_SPONGELIB
-int sec_ts_check_custom_library(struct sec_ts_data *ts);
+int sec_ts_y661_check_custom_library(struct sec_ts_y661_data *ts);
 #endif
-void sec_ts_unlocked_release_all_finger(struct sec_ts_data *ts);
-void sec_ts_locked_release_all_finger(struct sec_ts_data *ts);
-void sec_ts_fn_remove(struct sec_ts_data *ts);
-void sec_ts_delay(unsigned int ms);
-int sec_ts_read_information(struct sec_ts_data *ts);
+void sec_ts_y661_unlocked_release_all_finger(struct sec_ts_y661_data *ts);
+void sec_ts_y661_locked_release_all_finger(struct sec_ts_y661_data *ts);
+void sec_ts_y661_fn_remove(struct sec_ts_y661_data *ts);
+void sec_ts_y661_delay(unsigned int ms);
+int sec_ts_y661_read_information(struct sec_ts_y661_data *ts);
 #ifdef PAT_CONTROL
-int sec_ts_tclm(struct sec_ts_data *ts, bool boot, bool run_force);
+int sec_ts_y661_tclm(struct sec_ts_y661_data *ts, bool boot, bool run_force);
 #endif
 #ifdef MINORITY_REPORT
-void minority_report_calculate_rawdata(struct sec_ts_data *ts);
-void minority_report_calculate_ito(struct sec_ts_data *ts);
-void minority_report_sync_latest_value(struct sec_ts_data *ts);
+void y661_minority_report_calculate_rawdata(struct sec_ts_y661_data *ts);
+void minority_report_calculate_ito_y661(struct sec_ts_y661_data *ts);
+void minority_report_sync_latest_value_y661(struct sec_ts_y661_data *ts);
 #endif
-void sec_ts_run_rawdata_all(struct sec_ts_data *ts, bool full_read);
-int read_pressure_data(struct sec_ts_data *ts, u8 type, short *value);
-void sec_ts_reinit(struct sec_ts_data *ts);
+void sec_ts_y661_run_rawdata_all(struct sec_ts_y661_data *ts, bool full_read);
+int read_pressure_data_y661(struct sec_ts_y661_data *ts, u8 type, short *value);
+void sec_ts_y661_reinit(struct sec_ts_y661_data *ts);
 
 #if !defined(CONFIG_SAMSUNG_PRODUCT_SHIP)
-int sec_ts_raw_device_init(struct sec_ts_data *ts);
+int sec_ts_y661_raw_device_init(struct sec_ts_y661_data *ts);
 #endif
 
 extern struct class *sec_class;
@@ -935,18 +935,18 @@ extern int haptic_homekey_release(void);
 
 extern bool tsp_init_done;
 
-extern struct sec_ts_data *ts_dup;
+extern struct sec_ts_y661_data *y661_ts_dup;
 
 #ifdef CONFIG_BATTERY_SAMSUNG
 extern unsigned int lpcharge;
 #endif
 
-extern void set_grip_data_to_ic(struct sec_ts_data *ts, u8 flag);
-extern void sec_ts_set_grip_type(struct sec_ts_data *ts, u8 set_type);
+extern void set_grip_data_to_ic_y661(struct sec_ts_y661_data *ts, u8 flag);
+extern void sec_ts_y661_set_grip_type(struct sec_ts_y661_data *ts, u8 set_type);
 
 #ifdef CONFIG_TRUSTONIC_TRUSTED_UI
-//extern void trustedui_mode_on(void);
-//extern void trustedui_mode_off(void);
+//extern void trustedui_mode_on_y661(void);
+//extern void trustedui_mode_off_y661(void);
 extern int tui_force_close(uint32_t arg);
 #endif
 

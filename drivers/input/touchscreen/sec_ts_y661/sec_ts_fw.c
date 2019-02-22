@@ -1,4 +1,4 @@
-/* drivers/input/touchscreen/sec_ts_fw.c
+/* drivers/input/touchscreen/sec_ts_y661_fw.c
  *
  * Copyright (C) 2015 Samsung Electronics Co., Ltd.
  * http://www.samsungsemi.com/
@@ -21,15 +21,15 @@ enum {
 	FFU,
 };
 
-static int sec_ts_enter_fw_mode(struct sec_ts_data *ts)
+static int sec_ts_y661_enter_fw_mode(struct sec_ts_y661_data *ts)
 {
 	int ret;
 	u8 fw_update_mode_passwd[] = {0x55, 0xAC};
 	u8 fw_status;
 	u8 id[3];
 
-	ret = ts->sec_ts_i2c_write(ts, SEC_TS_CMD_ENTER_FW_MODE, fw_update_mode_passwd, sizeof(fw_update_mode_passwd));
-	sec_ts_delay(20);
+	ret = ts->sec_ts_y661_i2c_write(ts, SEC_TS_CMD_ENTER_FW_MODE, fw_update_mode_passwd, sizeof(fw_update_mode_passwd));
+	sec_ts_y661_delay(20);
 	if (ret < 0) {
 		input_err(true, &ts->client->dev, "%s: write fail, enter_fw_mode\n", __func__);
 		return 0;
@@ -38,7 +38,7 @@ static int sec_ts_enter_fw_mode(struct sec_ts_data *ts)
 	input_info(true, &ts->client->dev, "%s: write ok, enter_fw_mode - 0x%x 0x%x 0x%x\n",
 			__func__, SEC_TS_CMD_ENTER_FW_MODE, fw_update_mode_passwd[0], fw_update_mode_passwd[1]);
 
-	ret = ts->sec_ts_i2c_read(ts, SEC_TS_READ_BOOT_STATUS, &fw_status, 1);
+	ret = ts->sec_ts_y661_i2c_read(ts, SEC_TS_READ_BOOT_STATUS, &fw_status, 1);
 	if (ret < 0) {
 		input_err(true, &ts->client->dev, "%s: read fail, read_boot_status\n", __func__);
 		return 0;
@@ -50,9 +50,9 @@ static int sec_ts_enter_fw_mode(struct sec_ts_data *ts)
 
 	input_info(true, &ts->client->dev, "%s: Success! read_boot_status = 0x%x\n", __func__, fw_status);
 
-	sec_ts_delay(10);
+	sec_ts_y661_delay(10);
 
-	ret = ts->sec_ts_i2c_read(ts, SEC_TS_READ_ID, id, 3);
+	ret = ts->sec_ts_y661_i2c_read(ts, SEC_TS_READ_ID, id, 3);
 	if (ret < 0) {
 		input_err(true, &ts->client->dev, "%s: read id fail\n", __func__);
 		return 0;
@@ -71,19 +71,19 @@ static int sec_ts_enter_fw_mode(struct sec_ts_data *ts)
 	return 1;
 }
 
-static int sec_ts_sw_reset(struct sec_ts_data *ts)
+static int sec_ts_y661_sw_reset(struct sec_ts_y661_data *ts)
 {
 	int ret;
 
-	ret = ts->sec_ts_i2c_write(ts, SEC_TS_CMD_SW_RESET, NULL, 0);
+	ret = ts->sec_ts_y661_i2c_write(ts, SEC_TS_CMD_SW_RESET, NULL, 0);
 	if (ret < 0) {
 		input_err(true, &ts->client->dev, "%s: write fail, sw_reset\n", __func__);
 		return 0;
 	}
 
-	sec_ts_delay(100);
+	sec_ts_y661_delay(100);
 
-	ret = sec_ts_wait_for_ready(ts, SEC_TS_ACK_BOOT_COMPLETE);
+	ret = sec_ts_y661_wait_for_ready(ts, SEC_TS_ACK_BOOT_COMPLETE);
 	if (ret < 0) {
 		input_err(true, &ts->client->dev, "%s: time out\n", __func__);
 		return 0;
@@ -92,7 +92,7 @@ static int sec_ts_sw_reset(struct sec_ts_data *ts)
 	input_info(true, &ts->client->dev, "%s: sw_reset\n", __func__);
 
 	/* Sense_on */
-	ret = ts->sec_ts_i2c_write(ts, SEC_TS_CMD_SENSE_ON, NULL, 0);
+	ret = ts->sec_ts_y661_i2c_write(ts, SEC_TS_CMD_SENSE_ON, NULL, 0);
 	if (ret < 0) {
 		input_err(true, &ts->client->dev, "%s: write fail, Sense_on\n", __func__);
 		return 0;
@@ -101,7 +101,7 @@ static int sec_ts_sw_reset(struct sec_ts_data *ts)
 	return ret;
 }
 
-static void sec_ts_save_version_of_bin(struct sec_ts_data *ts, const fw_header *fw_hd)
+static void sec_ts_y661_save_version_of_bin(struct sec_ts_y661_data *ts, const fw_header *fw_hd)
 {
 	ts->plat_data->img_version_of_bin[3] = ((fw_hd->img_ver >> 24) & 0xff);
 	ts->plat_data->img_version_of_bin[2] = ((fw_hd->img_ver >> 16) & 0xff);
@@ -137,7 +137,7 @@ static void sec_ts_save_version_of_bin(struct sec_ts_data *ts, const fw_header *
 			ts->plat_data->config_version_of_bin[3]);
 }
 
-static int sec_ts_save_version_of_ic(struct sec_ts_data *ts)
+static int sec_ts_y661_save_version_of_ic(struct sec_ts_y661_data *ts)
 {
 	u8 img_ver[4] = {0,};
 	u8 core_ver[4] = {0,};
@@ -145,7 +145,7 @@ static int sec_ts_save_version_of_ic(struct sec_ts_data *ts)
 	int ret;
 
 	/* Image ver */
-	ret = ts->sec_ts_i2c_read(ts, SEC_TS_READ_IMG_VERSION, img_ver, 4);
+	ret = ts->sec_ts_y661_i2c_read(ts, SEC_TS_READ_IMG_VERSION, img_ver, 4);
 	if (ret < 0) {
 		input_err(true, &ts->client->dev, "%s: Image version read error\n", __func__);
 		return -EIO;
@@ -159,7 +159,7 @@ static int sec_ts_save_version_of_ic(struct sec_ts_data *ts)
 	ts->plat_data->img_version_of_ic[3] = img_ver[3];
 
 	/* Core ver */
-	ret = ts->sec_ts_i2c_read(ts, SEC_TS_READ_FW_VERSION, core_ver, 4);
+	ret = ts->sec_ts_y661_i2c_read(ts, SEC_TS_READ_FW_VERSION, core_ver, 4);
 	if (ret < 0) {
 		input_err(true, &ts->client->dev, "%s: core version read error\n", __func__);
 		return -EIO;
@@ -173,7 +173,7 @@ static int sec_ts_save_version_of_ic(struct sec_ts_data *ts)
 	ts->plat_data->core_version_of_ic[3] = core_ver[3];
 
 	/* Config ver */
-	ret = ts->sec_ts_i2c_read(ts, SEC_TS_READ_PARA_VERSION, config_ver, 4);
+	ret = ts->sec_ts_y661_i2c_read(ts, SEC_TS_READ_PARA_VERSION, config_ver, 4);
 	if (ret < 0) {
 		input_err(true, &ts->client->dev, "%s: config version read error\n", __func__);
 		return -EIO;
@@ -189,24 +189,24 @@ static int sec_ts_save_version_of_ic(struct sec_ts_data *ts)
 	return 1;
 }
 
-static int sec_ts_check_firmware_version(struct sec_ts_data *ts, const u8 *fw_info)
+static int sec_ts_y661_check_firmware_version(struct sec_ts_y661_data *ts, const u8 *fw_info)
 {
 	fw_header *fw_hd;
 	u8 buff[1];
 	int i;
 	int ret;
 	/*
-	 * sec_ts_check_firmware_version
+	 * sec_ts_y661_check_firmware_version
 	 * return value = 1 : firmware download needed,
 	 * return value = 0 : skip firmware download
 	 */
 
 	fw_hd = (fw_header *)fw_info;
 
-	sec_ts_save_version_of_bin(ts, fw_hd);
+	sec_ts_y661_save_version_of_bin(ts, fw_hd);
 
 	/* firmware download if READ_BOOT_STATUS = 0x10 */
-	ret = ts->sec_ts_i2c_read(ts, SEC_TS_READ_BOOT_STATUS, buff, 1);
+	ret = ts->sec_ts_y661_i2c_read(ts, SEC_TS_READ_BOOT_STATUS, buff, 1);
 	if (ret < 0) {
 		input_err(true, &ts->client->dev,
 				"%s: fail to read BootStatus\n", __func__);
@@ -220,7 +220,7 @@ static int sec_ts_check_firmware_version(struct sec_ts_data *ts, const u8 *fw_in
 		return 1;
 	}
 
-	ret = sec_ts_save_version_of_ic(ts);
+	ret = sec_ts_y661_save_version_of_ic(ts);
 	if (ret < 0) {
 		input_err(true, &ts->client->dev, "%s: fail to read ic version\n", __func__);
 		return -EIO;
@@ -245,7 +245,7 @@ static int sec_ts_check_firmware_version(struct sec_ts_data *ts, const u8 *fw_in
 	return 0;
 }
 
-static u8 sec_ts_checksum(u8 *data, int offset, int size)
+static u8 sec_ts_y661_checksum(u8 *data, int offset, int size)
 {
 	int i;
 	u8 checksum = 0;
@@ -256,7 +256,7 @@ static u8 sec_ts_checksum(u8 *data, int offset, int size)
 	return checksum;
 }
 
-static int sec_ts_flashpageerase(struct sec_ts_data *ts, u32 page_idx, u32 page_num)
+static int sec_ts_y661_flashpageerase(struct sec_ts_y661_data *ts, u32 page_idx, u32 page_num)
 {
 	int ret;
 	u8 tCmd[6];
@@ -266,14 +266,14 @@ static int sec_ts_flashpageerase(struct sec_ts_data *ts, u32 page_idx, u32 page_
 	tCmd[2] = (u8)((page_idx >> 0) & 0xFF);
 	tCmd[3] = (u8)((page_num >> 8) & 0xFF);
 	tCmd[4] = (u8)((page_num >> 0) & 0xFF);
-	tCmd[5] = sec_ts_checksum(tCmd, 1, 4);
+	tCmd[5] = sec_ts_y661_checksum(tCmd, 1, 4);
 
-	ret = ts->sec_ts_i2c_write_burst(ts, tCmd, 6);
+	ret = ts->sec_ts_y661_i2c_write_burst(ts, tCmd, 6);
 
 	return ret;
 }
 
-static int sec_ts_flashpagewrite(struct sec_ts_data *ts, u32 page_idx, u8 *page_data)
+static int sec_ts_y661_flashpagewrite(struct sec_ts_y661_data *ts, u32 page_idx, u8 *page_data)
 {
 	int ret;
 	u8 tCmd[1 + 2 + SEC_TS_FW_BLK_SIZE_MAX + 1];
@@ -284,13 +284,13 @@ static int sec_ts_flashpagewrite(struct sec_ts_data *ts, u32 page_idx, u8 *page_
 	tCmd[2] = (u8)((page_idx >> 0) & 0xFF);
 
 	memcpy(&tCmd[3], page_data, flash_page_size);
-	tCmd[1 + 2 + flash_page_size] = sec_ts_checksum(tCmd, 1, 2 + flash_page_size);
+	tCmd[1 + 2 + flash_page_size] = sec_ts_y661_checksum(tCmd, 1, 2 + flash_page_size);
 
-	ret = ts->sec_ts_i2c_write_burst(ts, tCmd, 1 + 2 + flash_page_size + 1);
+	ret = ts->sec_ts_y661_i2c_write_burst(ts, tCmd, 1 + 2 + flash_page_size + 1);
 	return ret;
 }
 
-static int sec_ts_limited_flashpagewrite(struct sec_ts_data *ts, u32 page_idx, u8 *page_data)
+static int sec_ts_y661_limited_flashpagewrite(struct sec_ts_y661_data *ts, u32 page_idx, u8 *page_data)
 {
 	int ret = 0;
 	u8 *tCmd;
@@ -304,7 +304,7 @@ static int sec_ts_limited_flashpagewrite(struct sec_ts_data *ts, u32 page_idx, u
 	copy_data[1] = (u8)((page_idx >> 0) & 0xFF);	/* addL */
 
 	memcpy(&copy_data[2], page_data, flash_page_size);	/* DATA */
-	copy_data[2 + flash_page_size] = sec_ts_checksum(copy_data, 0, 2 + flash_page_size);	/* CS */
+	copy_data[2 + flash_page_size] = sec_ts_y661_checksum(copy_data, 0, 2 + flash_page_size);	/* CS */
 
 	while (copy_left > 0) {
 		int copy_cur = (copy_left > copy_max) ? copy_max : copy_left;
@@ -320,7 +320,7 @@ static int sec_ts_limited_flashpagewrite(struct sec_ts_data *ts, u32 page_idx, u
 
 		memcpy(&tCmd[1], &copy_data[copy_size], copy_cur);
 
-		ret = ts->sec_ts_i2c_write_burst(ts, tCmd, 1 + copy_cur);
+		ret = ts->sec_ts_y661_i2c_write_burst(ts, tCmd, 1 + copy_cur);
 		if (ret < 0)
 			input_err(true, &ts->client->dev,
 					"%s: failed, ret:%d\n", __func__, ret);
@@ -338,7 +338,7 @@ err_write:
 
 }
 
-static int sec_ts_flashwrite(struct sec_ts_data *ts, u32 mem_addr, u8 *mem_data, u32 mem_size, int retry)
+static int sec_ts_y661_flashwrite(struct sec_ts_y661_data *ts, u32 mem_addr, u8 *mem_data, u32 mem_size, int retry)
 {
 	int ret;
 	u32 page_idx;
@@ -357,7 +357,7 @@ static int sec_ts_flashwrite(struct sec_ts_data *ts, u32 mem_addr, u8 *mem_data,
 	page_idx_end = (mem_addr + mem_size - 1) / flash_page_size;
 	page_num = page_idx_end - page_idx_start + 1;
 
-	ret = sec_ts_flashpageerase(ts, page_idx_start, page_num);
+	ret = sec_ts_y661_flashpageerase(ts, page_idx_start, page_num);
 	if (ret < 0) {
 		input_err(true, &ts->client->dev,
 				"%s: fw erase failed, mem_addr= %08X, pagenum = %d\n",
@@ -365,7 +365,7 @@ static int sec_ts_flashwrite(struct sec_ts_data *ts, u32 mem_addr, u8 *mem_data,
 		return -EIO;
 	}
 
-	sec_ts_delay(page_num + 10);
+	sec_ts_y661_delay(page_num + 10);
 
 	size_copy = mem_size % flash_page_size;
 	if (size_copy == 0)
@@ -376,30 +376,30 @@ static int sec_ts_flashwrite(struct sec_ts_data *ts, u32 mem_addr, u8 *mem_data,
 	for (page_idx = page_num - 1;; page_idx--) {
 		memcpy(page_buf, mem_data + (page_idx * flash_page_size), size_copy);
 		if (ts->boot_ver[0] == 0xB2) {
-			ret = sec_ts_flashpagewrite(ts, (page_idx + page_idx_start), page_buf);
+			ret = sec_ts_y661_flashpagewrite(ts, (page_idx + page_idx_start), page_buf);
 			if (ret < 0) {
 				input_err(true, &ts->client->dev, "%s: fw write failed, page_idx = %u\n", __func__, page_idx);
 				goto err;
 			}
 
 			if (retry) {
-				sec_ts_delay(50);
-				ret = sec_ts_flashpagewrite(ts, (page_idx + page_idx_start), page_buf);
+				sec_ts_y661_delay(50);
+				ret = sec_ts_y661_flashpagewrite(ts, (page_idx + page_idx_start), page_buf);
 				if (ret < 0) {
 					input_err(true, &ts->client->dev, "%s: fw write failed, page_idx = %u\n", __func__, page_idx);
 					goto err;
 				}
 			}
 		} else {
-			ret = sec_ts_limited_flashpagewrite(ts, (page_idx + page_idx_start), page_buf);
+			ret = sec_ts_y661_limited_flashpagewrite(ts, (page_idx + page_idx_start), page_buf);
 			if (ret < 0) {
 				input_err(true, &ts->client->dev, "%s: fw write failed, page_idx = %u\n", __func__, page_idx);
 				goto err;
 			}
 
 			if (retry) {
-				sec_ts_delay(50);
-				ret = sec_ts_limited_flashpagewrite(ts, (page_idx + page_idx_start), page_buf);
+				sec_ts_y661_delay(50);
+				ret = sec_ts_y661_limited_flashpagewrite(ts, (page_idx + page_idx_start), page_buf);
 				if (ret < 0) {
 					input_err(true, &ts->client->dev, "%s: fw write failed, page_idx = %u\n", __func__, page_idx);
 					goto err;
@@ -409,7 +409,7 @@ static int sec_ts_flashwrite(struct sec_ts_data *ts, u32 mem_addr, u8 *mem_data,
 		}
 
 		size_copy = flash_page_size;
-		sec_ts_delay(5);
+		sec_ts_y661_delay(5);
 
 		if (page_idx == 0) /* end condition (page_idx >= 0)   page_idx type unsinged int */
 			break;
@@ -420,7 +420,7 @@ err:
 	return -EIO;
 }
 
-static int sec_ts_memoryblockread(struct sec_ts_data *ts, u32 mem_addr, int mem_size, u8 *buf)
+static int sec_ts_y661_memoryblockread(struct sec_ts_y661_data *ts, u32 mem_addr, int mem_size, u8 *buf)
 {
 	int ret;
 	u8 cmd[5];
@@ -438,7 +438,7 @@ static int sec_ts_memoryblockread(struct sec_ts_data *ts, u32 mem_addr, int mem_
 	cmd[3] = (u8)((mem_addr >> 8) & 0xff);
 	cmd[4] = (u8)((mem_addr >> 0) & 0xff);
 
-	ret = ts->sec_ts_i2c_write_burst(ts, cmd, 5);
+	ret = ts->sec_ts_y661_i2c_write_burst(ts, cmd, 5);
 	if (ret < 0) {
 		input_err(true, &ts->client->dev,
 				"%s: send command failed, %02X\n", __func__, cmd[0]);
@@ -450,7 +450,7 @@ static int sec_ts_memoryblockread(struct sec_ts_data *ts, u32 mem_addr, int mem_
 	cmd[1] = (u8)((mem_size >> 8) & 0xff);
 	cmd[2] = (u8)((mem_size >> 0) & 0xff);
 
-	ret = ts->sec_ts_i2c_write_burst(ts, cmd, 3);
+	ret = ts->sec_ts_y661_i2c_write_burst(ts, cmd, 3);
 	if (ret < 0) {
 		input_err(true, &ts->client->dev, "%s: send command failed, %02X\n", __func__, cmd[0]);
 		return -EIO;
@@ -462,19 +462,19 @@ static int sec_ts_memoryblockread(struct sec_ts_data *ts, u32 mem_addr, int mem_
 	data = buf;
 
 
-	ret = ts->sec_ts_i2c_read(ts, cmd[0], data, mem_size);
+	ret = ts->sec_ts_y661_i2c_read(ts, cmd[0], data, mem_size);
 	if (ret < 0) {
 		input_err(true, &ts->client->dev, "%s: memory read failed\n", __func__);
 		return -EIO;
 	}
 #if 0
-	ret = ts->sec_ts_i2c_write(ts, cmd[0], NULL, 0);
-	ret = ts->sec_ts_i2c_read_bulk(ts, data, mem_size);
+	ret = ts->sec_ts_y661_i2c_write(ts, cmd[0], NULL, 0);
+	ret = ts->sec_ts_y661_i2c_read_bulk(ts, data, mem_size);
 #endif
 	return 0;
 }
 
-static int sec_ts_memoryread(struct sec_ts_data *ts, u32 mem_addr, u8 *mem_data, u32 mem_size)
+static int sec_ts_y661_memoryread(struct sec_ts_y661_data *ts, u32 mem_addr, u8 *mem_data, u32 mem_size)
 {
 	int ret;
 	int retry = 3;
@@ -495,7 +495,7 @@ static int sec_ts_memoryread(struct sec_ts_data *ts, u32 mem_addr, u8 *mem_data,
 		unit_size = (read_left > max_size) ? max_size : read_left;
 		retry = 3;
 		do {
-			ret = sec_ts_memoryblockread(ts, mem_addr, unit_size, tmp_data);
+			ret = sec_ts_y661_memoryblockread(ts, mem_addr, unit_size, tmp_data);
 			if (retry-- == 0) {
 				input_err(true, &ts->client->dev,
 						"%s: fw read fail mem_addr=%08X,unit_size=%d\n",
@@ -517,7 +517,7 @@ static int sec_ts_memoryread(struct sec_ts_data *ts, u32 mem_addr, u8 *mem_data,
 	return read_size;
 }
 
-static int sec_ts_chunk_update(struct sec_ts_data *ts, u32 addr, u32 size, u8 *data, int retry)
+static int sec_ts_y661_chunk_update(struct sec_ts_y661_data *ts, u32 addr, u32 size, u8 *data, int retry)
 {
 	u32 fw_size;
 	u32 write_size;
@@ -526,7 +526,7 @@ static int sec_ts_chunk_update(struct sec_ts_data *ts, u32 addr, u32 size, u8 *d
 
 	fw_size = size;
 
-	write_size = sec_ts_flashwrite(ts, addr, data, fw_size, retry);
+	write_size = sec_ts_y661_flashwrite(ts, addr, data, fw_size, retry);
 	if (write_size != fw_size) {
 		input_err(true, &ts->client->dev, "%s: fw write failed\n", __func__);
 		ret = -1;
@@ -540,7 +540,7 @@ static int sec_ts_chunk_update(struct sec_ts_data *ts, u32 addr, u32 size, u8 *d
 		goto err_write_fail;
 	}
 
-	if (sec_ts_memoryread(ts, addr, mem_rb, fw_size) >= 0) {
+	if (sec_ts_y661_memoryread(ts, addr, mem_rb, fw_size) >= 0) {
 		u32 ii;
 
 		for (ii = 0; ii < fw_size; ii++) {
@@ -563,12 +563,12 @@ static int sec_ts_chunk_update(struct sec_ts_data *ts, u32 addr, u32 size, u8 *d
 out:
 	vfree(mem_rb);
 err_write_fail:
-	sec_ts_delay(10);
+	sec_ts_y661_delay(10);
 
 	return ret;
 }
 
-static int sec_ts_firmware_update(struct sec_ts_data *ts, const u8 *data, size_t size, int bl_update, int boot, int retry)
+static int sec_ts_y661_firmware_update(struct sec_ts_y661_data *ts, const u8 *data, size_t size, int bl_update, int boot, int retry)
 {
 	int i;
 	int ret;
@@ -581,7 +581,7 @@ static int sec_ts_firmware_update(struct sec_ts_data *ts, const u8 *data, size_t
 	/* Check whether CRC is appended or not.
 	 * Enter Firmware Update Mode
 	 */
-	if (!sec_ts_enter_fw_mode(ts)) {
+	if (!sec_ts_y661_enter_fw_mode(ts)) {
 		input_err(true, &ts->client->dev, "%s: firmware mode failed\n", __func__);
 		return -1;
 	}
@@ -614,7 +614,7 @@ static int sec_ts_firmware_update(struct sec_ts_data *ts, const u8 *data, size_t
 			return -1;
 		}
 		fd += sizeof(fw_chunk);
-		ret = sec_ts_chunk_update(ts, fw_ch->addr, fw_ch->size, fd, retry);
+		ret = sec_ts_y661_chunk_update(ts, fw_ch->addr, fw_ch->size, fd, retry);
 		if (ret < 0) {
 			input_err(true, &ts->client->dev, "%s: firmware chunk write failed, addr=%08X, size = %d\n", __func__, fw_ch->addr, fw_ch->size);
 			return -1;
@@ -622,20 +622,20 @@ static int sec_ts_firmware_update(struct sec_ts_data *ts, const u8 *data, size_t
 		fd += fw_ch->size;
 	}
 
-	sec_ts_sw_reset(ts);
+	sec_ts_y661_sw_reset(ts);
 
 #ifdef PAT_CONTROL
-	sec_ts_tclm(ts, boot, false);
+	sec_ts_y661_tclm(ts, boot, false);
 #else
 	/* always calibration after fw update */
 	input_err(true, &ts->client->dev, "%s: RUN OFFSET CALIBRATION\n", __func__);
 
-	ret = sec_ts_execute_force_calibration(ts, OFFSET_CAL_SEC);
+	ret = sec_ts_y661_execute_force_calibration(ts, OFFSET_CAL_SEC);
 	if (ret < 0)
 		input_err(true, &ts->client->dev, "%s: fail to write OFFSET CAL SEC!\n", __func__);
 
 #ifdef USE_PRESSURE_SENSOR
-	ret = sec_ts_execute_force_calibration(ts, PRESSURE_CAL);
+	ret = sec_ts_y661_execute_force_calibration(ts, PRESSURE_CAL);
 	if (ret < 0)
 		input_err(true, &ts->client->dev, "%s: fail to write PRESSURE CAL!\n", __func__);
 #endif
@@ -643,13 +643,13 @@ static int sec_ts_firmware_update(struct sec_ts_data *ts, const u8 *data, size_t
 
 	if (!bl_update) {
 		/* Sense_on */
-		ret = ts->sec_ts_i2c_write(ts, SEC_TS_CMD_SENSE_ON, NULL, 0);
+		ret = ts->sec_ts_y661_i2c_write(ts, SEC_TS_CMD_SENSE_ON, NULL, 0);
 		if (ret < 0) {
 			input_err(true, &ts->client->dev, "%s: write fail, Sense_on\n", __func__);
 			return -EIO;
 		}
 
-		if (ts->sec_ts_i2c_read(ts, SEC_TS_READ_BOOT_STATUS, &fw_status, 1) < 0) {
+		if (ts->sec_ts_y661_i2c_read(ts, SEC_TS_READ_BOOT_STATUS, &fw_status, 1) < 0) {
 			input_err(true, &ts->client->dev, "%s: read fail, read_boot_status = 0x%x\n", __func__, fw_status);
 			return -EIO;
 		}
@@ -664,7 +664,7 @@ static int sec_ts_firmware_update(struct sec_ts_data *ts, const u8 *data, size_t
 		return 1;
 	} else {
 
-		if (ts->sec_ts_i2c_read(ts, SEC_TS_READ_ID, tBuff, 3) < 0) {
+		if (ts->sec_ts_y661_i2c_read(ts, SEC_TS_READ_ID, tBuff, 3) < 0) {
 			input_err(true, &ts->client->dev, "%s: read device id fail after bl fw download\n", __func__);
 			return -EIO;
 		}
@@ -680,7 +680,7 @@ static int sec_ts_firmware_update(struct sec_ts_data *ts, const u8 *data, size_t
 
 }
 
-int sec_ts_firmware_update_bl(struct sec_ts_data *ts)
+int sec_ts_y661_firmware_update_bl(struct sec_ts_y661_data *ts)
 {
 	const struct firmware *fw_entry;
 	char fw_path[SEC_TS_MAX_FW_PATH];
@@ -700,7 +700,7 @@ int sec_ts_firmware_update_bl(struct sec_ts_data *ts)
 	input_info(true, &ts->client->dev, "%s: request bt done! size = %d\n", __func__, (int)fw_entry->size);
 
 	/* pat_control - boot(false) */
-	result = sec_ts_firmware_update(ts, fw_entry->data, fw_entry->size, 1, false, 0);
+	result = sec_ts_y661_firmware_update(ts, fw_entry->data, fw_entry->size, 1, false, 0);
 
 err_request_fw:
 	release_firmware(fw_entry);
@@ -709,38 +709,38 @@ err_request_fw:
 	return result;
 }
 
-int sec_ts_bl_update(struct sec_ts_data *ts)
+int sec_ts_y661_bl_update(struct sec_ts_y661_data *ts)
 {
 	int ret;
 	u8 tCmd[5] = { 0xDE, 0xAD, 0xBE, 0xEF };
 	u8 tBuff[3];
 
-	ret = ts->sec_ts_i2c_write(ts, SEC_TS_READ_BL_UPDATE_STATUS, tCmd, 4);
+	ret = ts->sec_ts_y661_i2c_write(ts, SEC_TS_READ_BL_UPDATE_STATUS, tCmd, 4);
 	if (ret < 0) {
 		input_err(true, &ts->client->dev, "%s: bl update command send fail!\n", __func__);
 		goto err;
 	}
-	sec_ts_delay(10);
+	sec_ts_y661_delay(10);
 
 	do {
-		ret = ts->sec_ts_i2c_read(ts, SEC_TS_READ_BL_UPDATE_STATUS, tBuff, 1);
+		ret = ts->sec_ts_y661_i2c_read(ts, SEC_TS_READ_BL_UPDATE_STATUS, tBuff, 1);
 		if (ret < 0) {
 			input_err(true, &ts->client->dev, "%s: read bl update status fail!\n", __func__);
 			goto err;
 		}
-		sec_ts_delay(2);
+		sec_ts_y661_delay(2);
 
 	} while (tBuff[0] == 0x1);
 
 	tCmd[0] = 0x55;
 	tCmd[1] = 0xAC;
-	ret = ts->sec_ts_i2c_write(ts, 0x57, tCmd, 2);
+	ret = ts->sec_ts_y661_i2c_write(ts, 0x57, tCmd, 2);
 	if (ret < 0) {
 		input_err(true, &ts->client->dev, "%s: write passwd fail!\n", __func__);
 		goto err;
 	}
 
-	ret = ts->sec_ts_i2c_read(ts, SEC_TS_READ_ID, tBuff, 3);
+	ret = ts->sec_ts_y661_i2c_read(ts, SEC_TS_READ_ID, tBuff, 3);
 
 	if (tBuff[0]  == 0xB4) {
 		input_info(true, &ts->client->dev, "%s: bl update completed!\n", __func__);
@@ -755,7 +755,7 @@ err:
 	return -EIO;
 }
 
-int sec_ts_firmware_update_on_probe(struct sec_ts_data *ts, bool force_update)
+int sec_ts_y661_firmware_update_on_probe(struct sec_ts_y661_data *ts, bool force_update)
 {
 	const struct firmware *fw_entry;
 	char fw_path[SEC_TS_MAX_FW_PATH];
@@ -776,7 +776,7 @@ int sec_ts_firmware_update_on_probe(struct sec_ts_data *ts, bool force_update)
 	disable_irq(ts->client->irq);
 
 	/* read cal status */
-	ts->cal_status = sec_ts_read_calibration_report(ts);
+	ts->cal_status = sec_ts_y661_read_calibration_report(ts);
 
 	input_info(true, &ts->client->dev, "%s: initial firmware update %s, cal:%X\n",
 			__func__, fw_path, ts->cal_status);
@@ -788,7 +788,7 @@ int sec_ts_firmware_update_on_probe(struct sec_ts_data *ts, bool force_update)
 	}
 	input_info(true, &ts->client->dev, "%s: request firmware done! size = %d\n", __func__, (int)fw_entry->size);
 
-	result = sec_ts_check_firmware_version(ts, fw_entry->data);
+	result = sec_ts_y661_check_firmware_version(ts, fw_entry->data);
 
 	if (ts->plat_data->bringup == 2) {
 		input_err(true, &ts->client->dev, "%s: bringup. do not update\n", __func__);
@@ -809,12 +809,12 @@ int sec_ts_firmware_update_on_probe(struct sec_ts_data *ts, bool force_update)
 
 	for (ii = 0; ii < 3; ii++) {
 		/* pat_control - boot(true) */
-		ret = sec_ts_firmware_update(ts, fw_entry->data, fw_entry->size, 0, true, ii);
+		ret = sec_ts_y661_firmware_update(ts, fw_entry->data, fw_entry->size, 0, true, ii);
 		if (ret >= 0)
 			break;
 	}
 
-	sec_ts_save_version_of_ic(ts);
+	sec_ts_y661_save_version_of_ic(ts);
 
 err_request_fw:
 	release_firmware(fw_entry);
@@ -822,7 +822,7 @@ err_request_fw:
 	return result;
 }
 
-static int sec_ts_load_fw_from_bin(struct sec_ts_data *ts)
+static int sec_ts_y661_load_fw_from_bin(struct sec_ts_y661_data *ts)
 {
 	const struct firmware *fw_entry;
 	char fw_path[SEC_TS_MAX_FW_PATH];
@@ -847,12 +847,12 @@ static int sec_ts_load_fw_from_bin(struct sec_ts_data *ts)
 	input_info(true, &ts->client->dev, "%s: request firmware done! size = %d\n", __func__, (int)fw_entry->size);
 
 	/* pat_control - boot(false) */
-	if (sec_ts_firmware_update(ts, fw_entry->data, fw_entry->size, 0, false, 0) < 0)
+	if (sec_ts_y661_firmware_update(ts, fw_entry->data, fw_entry->size, 0, false, 0) < 0)
 		error = -1;
 	else
 		error = 0;
 
-	sec_ts_save_version_of_ic(ts);
+	sec_ts_y661_save_version_of_ic(ts);
 
 err_request_fw:
 	release_firmware(fw_entry);
@@ -862,7 +862,7 @@ err_request_fw:
 	return error;
 }
 
-static int sec_ts_load_fw_from_ums(struct sec_ts_data *ts)
+static int sec_ts_y661_load_fw_from_ums(struct sec_ts_y661_data *ts)
 {
 	fw_header *fw_hd;
 	struct file *fp;
@@ -908,7 +908,7 @@ static int sec_ts_load_fw_from_ums(struct sec_ts_data *ts)
 		} else {
 			fw_hd = (fw_header *)fw_data;
 #if 0
-			sec_ts_check_firmware_version(ts, fw_data);
+			sec_ts_y661_check_firmware_version(ts, fw_data);
 #endif
 			input_info(true, &ts->client->dev, "%s: firmware version %08X\n", __func__, fw_hd->fw_ver);
 			input_info(true, &ts->client->dev, "%s: parameter version %08X\n", __func__, fw_hd->para_ver);
@@ -916,8 +916,8 @@ static int sec_ts_load_fw_from_ums(struct sec_ts_data *ts)
 			if (ts->client->irq)
 				disable_irq(ts->client->irq);
 			/* pat_control - boot(false) */
-			if (sec_ts_firmware_update(ts, fw_data, fw_size, 0, false, 0) >= 0)
-				sec_ts_save_version_of_ic(ts);
+			if (sec_ts_y661_firmware_update(ts, fw_data, fw_size, 0, false, 0) >= 0)
+				sec_ts_y661_save_version_of_ic(ts);
 
 			if (ts->client->irq)
 				enable_irq(ts->client->irq);
@@ -937,7 +937,7 @@ open_err:
 	return error;
 }
 
-static int sec_ts_load_fw_from_ffu(struct sec_ts_data *ts)
+static int sec_ts_y661_load_fw_from_ffu(struct sec_ts_y661_data *ts)
 {
 	const struct firmware *fw_entry;
 	const char *fw_path = SEC_TS_DEFAULT_FFU_FW;
@@ -954,14 +954,14 @@ static int sec_ts_load_fw_from_ffu(struct sec_ts_data *ts)
 	}
 	input_info(true, &ts->client->dev, "%s: request firmware done! size = %d\n", __func__, (int)fw_entry->size);
 
-	sec_ts_check_firmware_version(ts, fw_entry->data);
+	sec_ts_y661_check_firmware_version(ts, fw_entry->data);
 	/* pat_control - boot(false) */
-	if (sec_ts_firmware_update(ts, fw_entry->data, fw_entry->size, 0, false, 0) < 0)
+	if (sec_ts_y661_firmware_update(ts, fw_entry->data, fw_entry->size, 0, false, 0) < 0)
 		result = -1;
 	else
 		result = 0;
 
-	sec_ts_save_version_of_ic(ts);
+	sec_ts_y661_save_version_of_ic(ts);
 
 err_request_fw:
 	release_firmware(fw_entry);
@@ -969,7 +969,7 @@ err_request_fw:
 	return result;
 }
 
-int sec_ts_firmware_update_on_hidden_menu(struct sec_ts_data *ts, int update_type)
+int sec_ts_y661_firmware_update_on_hidden_menu(struct sec_ts_y661_data *ts, int update_type)
 {
 	int ret = 0;
 
@@ -984,26 +984,26 @@ int sec_ts_firmware_update_on_hidden_menu(struct sec_ts_data *ts, int update_typ
 
 	switch (update_type) {
 	case BUILT_IN:
-		ret = sec_ts_load_fw_from_bin(ts);
+		ret = sec_ts_y661_load_fw_from_bin(ts);
 		break;
 	case UMS:
-		ret = sec_ts_load_fw_from_ums(ts);
+		ret = sec_ts_y661_load_fw_from_ums(ts);
 		break;
 	case FFU:
-		ret = sec_ts_load_fw_from_ffu(ts);
+		ret = sec_ts_y661_load_fw_from_ffu(ts);
 		break;
 	case BL:
-		ret = sec_ts_firmware_update_bl(ts);
+		ret = sec_ts_y661_firmware_update_bl(ts);
 		if (ret < 0) {
 			break;
 		} else if (!ret) {
-			ret = sec_ts_firmware_update_on_probe(ts, false);
+			ret = sec_ts_y661_firmware_update_on_probe(ts, false);
 			break;
 		} else {
-			ret = sec_ts_bl_update(ts);
+			ret = sec_ts_y661_bl_update(ts);
 			if (ret < 0)
 				break;
-			ret = sec_ts_firmware_update_on_probe(ts, false);
+			ret = sec_ts_y661_firmware_update_on_probe(ts, false);
 			if (ret < 0)
 				break;
 		}
@@ -1015,11 +1015,11 @@ int sec_ts_firmware_update_on_hidden_menu(struct sec_ts_data *ts, int update_typ
 	}
 
 #ifdef SEC_TS_SUPPORT_SPONGELIB
-	sec_ts_check_custom_library(ts);
+	sec_ts_y661_check_custom_library(ts);
 	if (ts->use_sponge)
-		sec_ts_set_custom_library(ts);
+		sec_ts_y661_set_custom_library(ts);
 #endif
 
 	return ret;
 }
-EXPORT_SYMBOL(sec_ts_firmware_update_on_hidden_menu);
+EXPORT_SYMBOL(sec_ts_y661_firmware_update_on_hidden_menu);

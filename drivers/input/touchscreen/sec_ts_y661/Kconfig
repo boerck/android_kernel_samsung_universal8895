@@ -10,7 +10,7 @@ config TOUCHSCREEN_SEC_TS_Y661
           If unsure, say N.
 
           To compile this driver as a module, choose M here: the
-          module will be called sec_ts.
+          module will be called sec_ts_y661.
 
 config TOUCHSCREEN_SEC_TS_GLOVEMODE
         tristate "Samsung Electronics Touchscreen"

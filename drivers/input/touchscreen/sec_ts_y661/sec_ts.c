@@ -1,4 +1,4 @@
-/* drivers/input/touchscreen/sec_ts.c
+/* drivers/input/touchscreen/sec_ts_y661.c
  *
  * Copyright (C) 2011 Samsung Electronics Co., Ltd.
  * http://www.samsungsemi.com/
@@ -10,7 +10,7 @@
  * published by the Free Software Foundation.
  */
 
-struct sec_ts_data *tsp_info;
+struct sec_ts_y661_data *y661_tsp_info;
 
 #include "sec_ts.h"
 
@@ -23,26 +23,26 @@ enum subsystem {
 #define TZ_BLSP_MODIFY_OWNERSHIP_ID 3
 #endif
 
-struct sec_ts_data *ts_dup;
+struct sec_ts_y661_data *y661_ts_dup;
 
 #ifdef USE_POWER_RESET_WORK
-static void sec_ts_reset_work(struct work_struct *work);
+static void sec_ts_y661_reset_work(struct work_struct *work);
 #endif
-static void sec_ts_read_info_work(struct work_struct *work);
+static void sec_ts_y661_read_info_work(struct work_struct *work);
 
 #ifdef USE_OPEN_CLOSE
-static int sec_ts_input_open(struct input_dev *dev);
-static void sec_ts_input_close(struct input_dev *dev);
+static int sec_ts_y661_input_open(struct input_dev *dev);
+static void sec_ts_y661_input_close(struct input_dev *dev);
 #endif
 
 #ifdef CONFIG_INPUT_WACOM
 extern void epen_disable_mode(int mode);
 #endif
 
-int sec_ts_read_information(struct sec_ts_data *ts);
+int sec_ts_y661_read_information(struct sec_ts_y661_data *ts);
 
 #ifdef CONFIG_SECURE_TOUCH
-static int sec_ts_change_pipe_owner(struct sec_ts_data *ts, enum subsystem subsystem)
+static int sec_ts_y661_change_pipe_owner(struct sec_ts_y661_data *ts, enum subsystem subsystem)
 {
 	/* scm call disciptor */
 	struct scm_desc desc;
@@ -66,9 +66,9 @@ static int sec_ts_change_pipe_owner(struct sec_ts_data *ts, enum subsystem subsy
 	return desc.ret[0];
 }
 
-static irqreturn_t sec_ts_irq_thread(int irq, void *ptr);
+static irqreturn_t sec_ts_y661_irq_thread(int irq, void *ptr);
 
-static irqreturn_t secure_filter_interrupt(struct sec_ts_data *ts)
+static irqreturn_t secure_filter_interrupt(struct sec_ts_y661_data *ts)
 {
 	if (atomic_read(&ts->secure_enabled) == SECURE_TOUCH_ENABLE) {
 		if (atomic_cmpxchg(&ts->secure_pending_irqs, 0, 1) == 0) {
@@ -88,7 +88,7 @@ static irqreturn_t secure_filter_interrupt(struct sec_ts_data *ts)
 	return IRQ_NONE;
 }
 
-static int secure_touch_clk_prepare_enable(struct sec_ts_data *ts)
+static int secure_touch_clk_prepare_enable(struct sec_ts_y661_data *ts)
 {
 	int ret;
 
@@ -117,7 +117,7 @@ err_core_clk:
 	return -ENODEV;
 }
 
-static void secure_touch_clk_unprepare_disable(struct sec_ts_data *ts)
+static void secure_touch_clk_unprepare_disable(struct sec_ts_y661_data *ts)
 {
 	if (!ts->core_clk || !ts->iface_clk) {
 		input_err(true, &ts->client->dev, "%s: error clk\n", __func__);
@@ -136,7 +136,7 @@ static void secure_touch_clk_unprepare_disable(struct sec_ts_data *ts)
 static ssize_t secure_touch_enable_show(struct device *dev,
 		struct device_attribute *attr, char *buf)
 {
-	struct sec_ts_data *ts = dev_get_drvdata(dev);
+	struct sec_ts_y661_data *ts = dev_get_drvdata(dev);
 
 	return snprintf(buf, PAGE_SIZE, "%d", atomic_read(&ts->secure_enabled));
 }
@@ -144,7 +144,7 @@ static ssize_t secure_touch_enable_show(struct device *dev,
 static ssize_t secure_touch_enable_store(struct device *dev,
 		struct device_attribute *addr, const char *buf, size_t count)
 {
-	struct sec_ts_data *ts = dev_get_drvdata(dev);
+	struct sec_ts_y661_data *ts = dev_get_drvdata(dev);
 	int ret;
 	unsigned long data;
 
@@ -180,7 +180,7 @@ static ssize_t secure_touch_enable_store(struct device *dev,
 		disable_irq(ts->client->irq);
 
 		/* Fix normal active mode : idle mode is failed to i2c for 1 time */
-		ret = sec_ts_fix_tmode(ts, TOUCH_SYSTEM_MODE_TOUCH, TOUCH_MODE_STATE_TOUCH);
+		ret = sec_ts_y661_fix_tmode(ts, TOUCH_SYSTEM_MODE_TOUCH, TOUCH_MODE_STATE_TOUCH);
 		if (ret < 0) {
 			enable_irq(ts->client->irq);
 			input_err(true, &ts->client->dev, "%s: failed to fix tmode\n",
@@ -189,7 +189,7 @@ static ssize_t secure_touch_enable_store(struct device *dev,
 		}
 
 		/* Release All Finger */
-		sec_ts_unlocked_release_all_finger(ts);
+		sec_ts_y661_unlocked_release_all_finger(ts);
 
 		if (pm_runtime_get_sync(ts->client->adapter->dev.parent) < 0) {
 			enable_irq(ts->client->irq);
@@ -204,7 +204,7 @@ static ssize_t secure_touch_enable_store(struct device *dev,
 			return -ENXIO;
 		}
 
-		sec_ts_change_pipe_owner(ts, TZ);
+		sec_ts_y661_change_pipe_owner(ts, TZ);
 
 		reinit_completion(&ts->secure_powerdown);
 		reinit_completion(&ts->secure_interrupt);
@@ -224,7 +224,7 @@ static ssize_t secure_touch_enable_store(struct device *dev,
 			return count;
 		}
 
-		sec_ts_change_pipe_owner(ts, APSS);
+		sec_ts_y661_change_pipe_owner(ts, APSS);
 
 		secure_touch_clk_unprepare_disable(ts);
 		pm_runtime_put_sync(ts->client->adapter->dev.parent);
@@ -232,9 +232,9 @@ static ssize_t secure_touch_enable_store(struct device *dev,
 
 		sysfs_notify(&ts->input_dev->dev.kobj, NULL, "secure_touch");
 
-		sec_ts_delay(10);
+		sec_ts_y661_delay(10);
 
-		sec_ts_irq_thread(ts->client->irq, ts);
+		sec_ts_y661_irq_thread(ts->client->irq, ts);
 		complete(&ts->secure_interrupt);
 		complete(&ts->secure_powerdown);
 #if defined(CONFIG_TRUSTONIC_TRUSTED_UI)
@@ -243,7 +243,7 @@ static ssize_t secure_touch_enable_store(struct device *dev,
 
 		input_info(true, &ts->client->dev, "%s: secure touch disable\n", __func__);
 
-		ret = sec_ts_release_tmode(ts);
+		ret = sec_ts_y661_release_tmode(ts);
 		if (ret < 0) {
 			input_err(true, &ts->client->dev, "%s: failed to release tmode\n",
 					__func__);
@@ -261,7 +261,7 @@ static ssize_t secure_touch_enable_store(struct device *dev,
 #if defined(CONFIG_TRUSTONIC_TRUSTED_UI)
 static int secure_get_irq(struct device *dev)
 {
-	struct sec_ts_data *ts = dev_get_drvdata(dev);
+	struct sec_ts_y661_data *ts = dev_get_drvdata(dev);
 	int val = 0;
 
 	if (atomic_read(&ts->secure_enabled) == SECURE_TOUCH_DISABLE) {
@@ -289,7 +289,7 @@ static int secure_get_irq(struct device *dev)
 static ssize_t secure_touch_show(struct device *dev,
 		struct device_attribute *attr, char *buf)
 {
-	struct sec_ts_data *ts = dev_get_drvdata(dev);
+	struct sec_ts_y661_data *ts = dev_get_drvdata(dev);
 	int val = 0;
 
 	if (atomic_read(&ts->secure_enabled) == SECURE_TOUCH_DISABLE) {
@@ -337,7 +337,7 @@ static struct attribute_group secure_attr_group = {
 };
 
 
-static int secure_touch_init(struct sec_ts_data *ts)
+static int secure_touch_init(struct sec_ts_y661_data *ts)
 {
 	input_info(true, &ts->client->dev, "%s\n", __func__);
 
@@ -378,7 +378,7 @@ err_core_clk:
 	return -ENODEV;
 }
 
-static void secure_touch_remove(struct sec_ts_data *ts)
+static void secure_touch_remove(struct sec_ts_y661_data *ts)
 {
 	if (!IS_ERR_OR_NULL(ts->core_clk))
 		clk_put(ts->core_clk);
@@ -387,7 +387,7 @@ static void secure_touch_remove(struct sec_ts_data *ts)
 		clk_put(ts->iface_clk);
 }
 
-static void secure_touch_stop(struct sec_ts_data *ts, bool stop)
+static void secure_touch_stop(struct sec_ts_y661_data *ts, bool stop)
 {
 	if (atomic_read(&ts->secure_enabled)) {
 		atomic_set(&ts->secure_pending_irqs, -1);
@@ -406,7 +406,7 @@ static void secure_touch_stop(struct sec_ts_data *ts, bool stop)
 }
 #endif
 
-int sec_ts_i2c_write(struct sec_ts_data *ts, u8 reg, u8 *data, int len)
+int sec_ts_y661_i2c_write(struct sec_ts_y661_data *ts, u8 reg, u8 *data, int len)
 {
 	u8 buf[I2C_WRITE_BUFFER_SIZE + 1];
 	int ret;
@@ -481,7 +481,7 @@ err:
 	return -EIO;
 }
 
-int sec_ts_i2c_read(struct sec_ts_data *ts, u8 reg, u8 *data, int len)
+int sec_ts_y661_i2c_read(struct sec_ts_y661_data *ts, u8 reg, u8 *data, int len)
 {
 	u8 buf[4];
 	int ret;
@@ -614,7 +614,7 @@ err:
 	return -EIO;
 }
 
-static int sec_ts_i2c_write_burst(struct sec_ts_data *ts, u8 *data, int len)
+static int sec_ts_y661_i2c_write_burst(struct sec_ts_y661_data *ts, u8 *data, int len)
 {
 	int ret;
 	int retry;
@@ -649,7 +649,7 @@ static int sec_ts_i2c_write_burst(struct sec_ts_data *ts, u8 *data, int len)
 	return ret;
 }
 
-static int sec_ts_i2c_read_bulk(struct sec_ts_data *ts, u8 *data, int len)
+static int sec_ts_y661_i2c_read_bulk(struct sec_ts_y661_data *ts, u8 *data, int len)
 {
 	int ret;
 	unsigned char retry;
@@ -709,15 +709,15 @@ static int sec_ts_i2c_read_bulk(struct sec_ts_data *ts, u8 *data, int len)
 	return -EIO;
 }
 
-static int sec_ts_read_from_sponge(struct sec_ts_data *ts, u8 *data, int len)
+static int sec_ts_y661_read_from_sponge(struct sec_ts_y661_data *ts, u8 *data, int len)
 {
 	int ret;
 
-	ret = sec_ts_i2c_write(ts, SEC_TS_CMD_SPONGE_READ_PARAM, data, 2);
+	ret = sec_ts_y661_i2c_write(ts, SEC_TS_CMD_SPONGE_READ_PARAM, data, 2);
 	if (ret < 0)
 		input_err(true, &ts->client->dev, "%s: fail to read sponge command\n", __func__);
 
-	ret = sec_ts_i2c_read(ts, SEC_TS_CMD_SPONGE_READ_PARAM, (u8 *)data, len);
+	ret = sec_ts_y661_i2c_read(ts, SEC_TS_CMD_SPONGE_READ_PARAM, (u8 *)data, len);
 	if (ret < 0)
 		input_err(true, &ts->client->dev, "%s: fail to read sponge command\n", __func__);
 
@@ -729,9 +729,9 @@ static int sec_ts_read_from_sponge(struct sec_ts_data *ts, u8 *data, int len)
 extern struct tsp_dump_callbacks dump_callbacks;
 static struct delayed_work *p_ghost_check;
 
-static void sec_ts_check_rawdata(struct work_struct *work)
+static void sec_ts_y661_check_rawdata(struct work_struct *work)
 {
-	struct sec_ts_data *ts = container_of(work, struct sec_ts_data, ghost_check.work);
+	struct sec_ts_y661_data *ts = container_of(work, struct sec_ts_y661_data, ghost_check.work);
 
 	if (ts->tsp_dump_lock == 1) {
 		input_err(true, &ts->client->dev, "%s: ignored ## already checking..\n", __func__);
@@ -742,7 +742,7 @@ static void sec_ts_check_rawdata(struct work_struct *work)
 		return;
 	}
 
-	sec_ts_run_rawdata_all(ts, true);
+	sec_ts_y661_run_rawdata_all(ts, true);
 }
 
 static void dump_tsp_log(void)
@@ -765,7 +765,7 @@ static void dump_tsp_log(void)
 #endif
 
 
-void sec_ts_delay(unsigned int ms)
+void sec_ts_y661_delay(unsigned int ms)
 {
 	if (ms < 20)
 		usleep_range(ms * 1000, ms * 1000);
@@ -773,13 +773,13 @@ void sec_ts_delay(unsigned int ms)
 		msleep(ms);
 }
 
-int sec_ts_wait_for_ready(struct sec_ts_data *ts, unsigned int ack)
+int sec_ts_y661_wait_for_ready(struct sec_ts_y661_data *ts, unsigned int ack)
 {
 	int rc = -1;
 	int retry = 0;
 	u8 tBuff[SEC_TS_EVENT_BUFF_SIZE] = {0,};
 
-	while (sec_ts_i2c_read(ts, SEC_TS_READ_ONE_EVENT, tBuff, SEC_TS_EVENT_BUFF_SIZE) > 0) {
+	while (sec_ts_y661_i2c_read(ts, SEC_TS_READ_ONE_EVENT, tBuff, SEC_TS_EVENT_BUFF_SIZE) > 0) {
 		if (((tBuff[0] >> 2) & 0xF) == TYPE_STATUS_EVENT_INFO) {
 			if (tBuff[1] == ack) {
 				rc = 0;
@@ -796,7 +796,7 @@ int sec_ts_wait_for_ready(struct sec_ts_data *ts, unsigned int ack)
 			input_err(true, &ts->client->dev, "%s: Time Over\n", __func__);
 			break;
 		}
-		sec_ts_delay(20);
+		sec_ts_y661_delay(20);
 	}
 
 	input_info(true, &ts->client->dev,
@@ -807,14 +807,14 @@ int sec_ts_wait_for_ready(struct sec_ts_data *ts, unsigned int ack)
 	return rc;
 }
 
-int sec_ts_read_calibration_report(struct sec_ts_data *ts)
+int sec_ts_y661_read_calibration_report(struct sec_ts_y661_data *ts)
 {
 	int ret;
 	u8 buf[5] = { 0 };
 
 	buf[0] = SEC_TS_READ_CALIBRATION_REPORT;
 
-	ret = sec_ts_i2c_read(ts, buf[0], &buf[1], 4);
+	ret = sec_ts_y661_i2c_read(ts, buf[0], &buf[1], 4);
 	if (ret < 0) {
 		input_err(true, &ts->client->dev, "%s: failed to read, %d\n", __func__, ret);
 		return ret;
@@ -826,7 +826,7 @@ int sec_ts_read_calibration_report(struct sec_ts_data *ts)
 	return buf[4];
 }
 
-void sec_ts_reinit(struct sec_ts_data *ts)
+void sec_ts_y661_reinit(struct sec_ts_y661_data *ts)
 {
 	u8 w_data[2] = {0x00, 0x00};
 	int ret = 0;
@@ -841,7 +841,7 @@ void sec_ts_reinit(struct sec_ts_data *ts)
 	/* charger mode */
 	if (ts->charger_mode != SEC_TS_BIT_CHARGER_MODE_NO) {
 		w_data[0] = ts->charger_mode;
-		ret = ts->sec_ts_i2c_write(ts, SET_TS_CMD_SET_CHARGER_MODE, (u8 *)&w_data[0], 1);
+		ret = ts->sec_ts_y661_i2c_write(ts, SET_TS_CMD_SET_CHARGER_MODE, (u8 *)&w_data[0], 1);
 		if (ret < 0)
 			input_err(true, &ts->client->dev, "%s: Failed to send command(0x%x)",
 					__func__, SET_TS_CMD_SET_CHARGER_MODE);
@@ -850,35 +850,35 @@ void sec_ts_reinit(struct sec_ts_data *ts)
 	/* Cover mode */
 	if (ts->touch_functions & SEC_TS_BIT_SETFUNC_COVER) {
 		w_data[0] = ts->cover_cmd;
-		ret = sec_ts_i2c_write(ts, SEC_TS_CMD_SET_COVERTYPE, (u8 *)&w_data[0], 1);
+		ret = sec_ts_y661_i2c_write(ts, SEC_TS_CMD_SET_COVERTYPE, (u8 *)&w_data[0], 1);
 		if (ret < 0)
 			input_err(true, &ts->client->dev, "%s: Failed to send command(0x%x)",
 					__func__, SEC_TS_CMD_SET_COVERTYPE);
 
-		ret = sec_ts_i2c_write(ts, SEC_TS_CMD_SET_TOUCHFUNCTION, (u8 *)&(ts->touch_functions), 2);
+		ret = sec_ts_y661_i2c_write(ts, SEC_TS_CMD_SET_TOUCHFUNCTION, (u8 *)&(ts->touch_functions), 2);
 		if (ret < 0)
 			input_err(true, &ts->client->dev, "%s: Failed to send command(0x%x)",
 					__func__, SEC_TS_CMD_SET_TOUCHFUNCTION);
 	}
 
 	if (ts->use_sponge)
-		sec_ts_set_custom_library(ts);
+		sec_ts_y661_set_custom_library(ts);
 
 	/* Power mode */
 	if (ts->power_status == SEC_TS_STATE_LPM) {
 		w_data[0] = (ts->lowpower_mode & SEC_TS_MODE_LOWPOWER_FLAG) >> 1;
-		ret = sec_ts_i2c_write(ts, SEC_TS_CMD_WAKEUP_GESTURE_MODE, (u8 *)&w_data[0], 1);
+		ret = sec_ts_y661_i2c_write(ts, SEC_TS_CMD_WAKEUP_GESTURE_MODE, (u8 *)&w_data[0], 1);
 		if (ret < 0)
 			input_err(true, &ts->client->dev, "%s: Failed to send command(0x%x)",
 					__func__, SEC_TS_CMD_WAKEUP_GESTURE_MODE);
 
 		w_data[0] = TO_LOWPOWER_MODE;
-		ret = sec_ts_i2c_write(ts, SEC_TS_CMD_SET_POWER_MODE, (u8 *)&w_data[0], 1);
+		ret = sec_ts_y661_i2c_write(ts, SEC_TS_CMD_SET_POWER_MODE, (u8 *)&w_data[0], 1);
 		if (ret < 0)
 			input_err(true, &ts->client->dev, "%s: Failed to send command(0x%x)",
 					__func__, SEC_TS_CMD_SET_POWER_MODE);
 
-		sec_ts_delay(50);
+		sec_ts_y661_delay(50);
 
 		if (ts->lowpower_mode & SEC_TS_MODE_SPONGE_AOD) {
 			int i, ret;
@@ -889,11 +889,11 @@ void sec_ts_reinit(struct sec_ts_data *ts)
 				data[i * 2 + 3] = (ts->rect_data[i] >> 8) & 0xFF;
 			}
 
-			ret = ts->sec_ts_i2c_write(ts, SEC_TS_CMD_SPONGE_WRITE_PARAM, &data[0], 10);
+			ret = ts->sec_ts_y661_i2c_write(ts, SEC_TS_CMD_SPONGE_WRITE_PARAM, &data[0], 10);
 			if (ret < 0)
 				input_err(true, &ts->client->dev, "%s: Failed to write offset\n", __func__);
 
-			ret = ts->sec_ts_i2c_write(ts, SEC_TS_CMD_SPONGE_NOTIFY_PACKET, NULL, 0);
+			ret = ts->sec_ts_y661_i2c_write(ts, SEC_TS_CMD_SPONGE_NOTIFY_PACKET, NULL, 0);
 			if (ret < 0)
 				input_err(true, &ts->client->dev, "%s: Failed to send notify\n", __func__);
 
@@ -901,11 +901,11 @@ void sec_ts_reinit(struct sec_ts_data *ts)
 
 	} else {
 
-		sec_ts_set_grip_type(ts, ONLY_EDGE_HANDLER);
+		sec_ts_y661_set_grip_type(ts, ONLY_EDGE_HANDLER);
 
 		if (ts->dex_mode) {
 			input_info(true, &ts->client->dev, "%s: set dex mode\n", __func__);
-			ret = ts->sec_ts_i2c_write(ts, SEC_TS_CMD_SET_DEX_MODE, &ts->dex_mode, 1);
+			ret = ts->sec_ts_y661_i2c_write(ts, SEC_TS_CMD_SET_DEX_MODE, &ts->dex_mode, 1);
 			if (ret < 0)
 				input_err(true, &ts->client->dev,
 						"%s: failed to set dex mode %x\n", __func__, ts->dex_mode);
@@ -913,7 +913,7 @@ void sec_ts_reinit(struct sec_ts_data *ts)
 
 		if (ts->brush_mode) {
 			input_info(true, &ts->client->dev, "%s: set brush mode\n", __func__);
-			ret = ts->sec_ts_i2c_write(ts, SEC_TS_CMD_SET_BRUSH_MODE, &ts->brush_mode, 1);
+			ret = ts->sec_ts_y661_i2c_write(ts, SEC_TS_CMD_SET_BRUSH_MODE, &ts->brush_mode, 1);
 			if (ret < 0)
 				input_err(true, &ts->client->dev,
 						"%s: failed to set brush mode\n", __func__);
@@ -921,7 +921,7 @@ void sec_ts_reinit(struct sec_ts_data *ts)
 
 		if (ts->touchable_area) {
 			input_info(true, &ts->client->dev, "%s: set 16:9 mode\n", __func__);
-			ret = ts->sec_ts_i2c_write(ts, SEC_TS_CMD_SET_TOUCHABLE_AREA, &ts->touchable_area, 1);
+			ret = ts->sec_ts_y661_i2c_write(ts, SEC_TS_CMD_SET_TOUCHABLE_AREA, &ts->touchable_area, 1);
 			if (ret < 0)
 				input_err(true, &ts->client->dev,
 						"%s: failed to set 16:9 mode\n", __func__);
@@ -932,7 +932,7 @@ void sec_ts_reinit(struct sec_ts_data *ts)
 }
 
 #define MAX_EVENT_COUNT 32
-static void sec_ts_read_event(struct sec_ts_data *ts)
+static void sec_ts_y661_read_event(struct sec_ts_y661_data *ts)
 {
 	int ret;
 	u8 t_id;
@@ -940,9 +940,9 @@ static void sec_ts_read_event(struct sec_ts_data *ts)
 	u8 left_event_count;
 	u8 read_event_buff[MAX_EVENT_COUNT][SEC_TS_EVENT_BUFF_SIZE] = { { 0 } };
 	u8 *event_buff;
-	struct sec_ts_event_coordinate *p_event_coord;
-	struct sec_ts_gesture_status *p_gesture_status;
-	struct sec_ts_event_status *p_event_status;
+	struct sec_ts_y661_event_coordinate *p_event_coord;
+	struct sec_ts_y661_gesture_status *p_gesture_status;
+	struct sec_ts_y661_event_status *p_event_status;
 	int curr_pos;
 	int remain_event_count = 0;
 	int pre_ttype = 0;
@@ -969,7 +969,7 @@ static void sec_ts_read_event(struct sec_ts_data *ts)
 
 	ret = t_id = event_id = curr_pos = remain_event_count = 0;
 	/* repeat READ_ONE_EVENT until buffer is empty(No event) */
-	ret = sec_ts_i2c_read(ts, SEC_TS_READ_ONE_EVENT, (u8 *)read_event_buff[0], SEC_TS_EVENT_BUFF_SIZE);
+	ret = sec_ts_y661_i2c_read(ts, SEC_TS_READ_ONE_EVENT, (u8 *)read_event_buff[0], SEC_TS_EVENT_BUFF_SIZE);
 	if (ret < 0) {
 		input_err(true, &ts->client->dev, "%s: i2c read one event failed\n", __func__);
 		return;
@@ -994,14 +994,14 @@ static void sec_ts_read_event(struct sec_ts_data *ts)
 		input_err(true, &ts->client->dev, "%s: event buffer overflow\n", __func__);
 
 		/* write clear event stack command when read_event_count > MAX_EVENT_COUNT */
-		ret = sec_ts_i2c_write(ts, SEC_TS_CMD_CLEAR_EVENT_STACK, NULL, 0);
+		ret = sec_ts_y661_i2c_write(ts, SEC_TS_CMD_CLEAR_EVENT_STACK, NULL, 0);
 		if (ret < 0)
 			input_err(true, &ts->client->dev, "%s: i2c write clear event failed\n", __func__);
 		return;
 	}
 
 	if (left_event_count > 0) {
-		ret = sec_ts_i2c_read(ts, SEC_TS_READ_ALL_EVENT, (u8 *)read_event_buff[1],
+		ret = sec_ts_y661_i2c_read(ts, SEC_TS_READ_ALL_EVENT, (u8 *)read_event_buff[1],
 				sizeof(u8) * (SEC_TS_EVENT_BUFF_SIZE) * (left_event_count));
 		if (ret < 0) {
 			input_err(true, &ts->client->dev, "%s: i2c read one event failed\n", __func__);
@@ -1020,7 +1020,7 @@ static void sec_ts_read_event(struct sec_ts_data *ts)
 
 		switch (event_id) {
 		case SEC_TS_STATUS_EVENT:
-			p_event_status = (struct sec_ts_event_status *)event_buff;
+			p_event_status = (struct sec_ts_y661_event_status *)event_buff;
 
 			/* tchsta == 0 && ttype == 0 && eid == 0 : buffer empty */
 			if (p_event_status->stype > 0)
@@ -1034,19 +1034,19 @@ static void sec_ts_read_event(struct sec_ts_data *ts)
 					(p_event_status->status_id == SEC_TS_ACK_BOOT_COMPLETE) &&
 					(p_event_status->status_data_1 == 0x20)) {
 
-				sec_ts_unlocked_release_all_finger(ts);
+				sec_ts_y661_unlocked_release_all_finger(ts);
 
-				ret = sec_ts_i2c_write(ts, SEC_TS_CMD_SENSE_ON, NULL, 0);
+				ret = sec_ts_y661_i2c_write(ts, SEC_TS_CMD_SENSE_ON, NULL, 0);
 				if (ret < 0)
 					input_err(true, &ts->client->dev, "%s: fail to write Sense_on\n", __func__);
-				sec_ts_reinit(ts);
+				sec_ts_y661_reinit(ts);
 			}
 
 			/* event queue full-> all finger release */
 			if ((p_event_status->stype == TYPE_STATUS_EVENT_ERR) &&
 					(p_event_status->status_id == SEC_TS_ERR_EVENT_QUEUE_FULL)) {
 				input_err(true, &ts->client->dev, "%s: IC Event Queue is full\n", __func__);
-				sec_ts_unlocked_release_all_finger(ts);
+				sec_ts_y661_unlocked_release_all_finger(ts);
 			}
 
 			if ((p_event_status->stype == TYPE_STATUS_EVENT_ERR) &&
@@ -1136,7 +1136,7 @@ static void sec_ts_read_event(struct sec_ts_data *ts)
 				input_err(true, &ts->client->dev, "%s: device is closed\n", __func__);
 				break;
 			}
-			p_event_coord = (struct sec_ts_event_coordinate *)event_buff;
+			p_event_coord = (struct sec_ts_y661_event_coordinate *)event_buff;
 
 			t_id = (p_event_coord->tid - 1);
 
@@ -1168,11 +1168,11 @@ static void sec_ts_read_event(struct sec_ts_data *ts)
 					addr[0] = SEC_TS_CMD_SPONGE_OFFSET_PRESSURE_DATA;
 					addr[1] = 0x00;
 
-					ret = ts->sec_ts_i2c_write(ts, SEC_TS_CMD_SPONGE_READ_PARAM, addr, 2);
+					ret = ts->sec_ts_y661_i2c_write(ts, SEC_TS_CMD_SPONGE_READ_PARAM, addr, 2);
 					if (ret < 0)
 						input_err(true, &ts->client->dev, "%s: i2c write sponge event failed\n", __func__);
 
-					ret = ts->sec_ts_i2c_read(ts, SEC_TS_CMD_SPONGE_READ_PARAM, data, 2);
+					ret = ts->sec_ts_y661_i2c_read(ts, SEC_TS_CMD_SPONGE_READ_PARAM, data, 2);
 					if (ret < 0)
 						input_err(true, &ts->client->dev, "%s: i2c read sponge event failed\n", __func__);
 
@@ -1202,7 +1202,7 @@ static void sec_ts_read_event(struct sec_ts_data *ts)
 								- ts->time_pressed[t_id].tv_sec))
 							ts->time_longest = (ts->time_released[t_id].tv_sec - ts->time_pressed[t_id].tv_sec);
 
-						ret = sec_ts_i2c_read(ts, SEC_TS_READ_FORCE_SIG_MAX_VAL, rbuf, 2);
+						ret = sec_ts_y661_i2c_read(ts, SEC_TS_READ_FORCE_SIG_MAX_VAL, rbuf, 2);
 						if (ret < 0)
 							input_err(true, &ts->client->dev,
 									"%s: fail to read max_pressure data\n",
@@ -1365,11 +1365,11 @@ static void sec_ts_read_event(struct sec_ts_data *ts)
 			break;
 
 		case SEC_TS_GESTURE_EVENT:
-			p_gesture_status = (struct sec_ts_gesture_status *)event_buff;
+			p_gesture_status = (struct sec_ts_y661_gesture_status *)event_buff;
 			if ((p_gesture_status->eid == 0x02) && (p_gesture_status->stype == 0x00)) {
 				u8 sponge[3] = { 0 };
 
-				ret = sec_ts_read_from_sponge(ts, sponge, 3);
+				ret = sec_ts_y661_read_from_sponge(ts, sponge, 3);
 				if (ret < 0)
 					input_err(true, &ts->client->dev, "%s: fail to read sponge data\n", __func__);
 
@@ -1383,7 +1383,7 @@ static void sec_ts_read_event(struct sec_ts_data *ts)
 					if (sponge[1] & (SEC_TS_MODE_SPONGE_AOD | SEC_TS_MODE_SPONGE_SINGLE_TAP)) {
 						u8 data[5] = { 0x0A, 0x00, 0x00, 0x00, 0x00 };
 
-						ret = sec_ts_read_from_sponge(ts, data, 5);
+						ret = sec_ts_y661_read_from_sponge(ts, data, 5);
 						if (ret < 0)
 							input_err(true, &ts->client->dev, "%s: fail to read sponge data\n", __func__);
 
@@ -1438,9 +1438,9 @@ static void sec_ts_read_event(struct sec_ts_data *ts)
 	input_sync(ts->input_dev);
 }
 
-static irqreturn_t sec_ts_irq_thread(int irq, void *ptr)
+static irqreturn_t sec_ts_y661_irq_thread(int irq, void *ptr)
 {
-	struct sec_ts_data *ts = (struct sec_ts_data *)ptr;
+	struct sec_ts_y661_data *ts = (struct sec_ts_y661_data *)ptr;
 
 #ifdef CONFIG_SECURE_TOUCH
 	if (secure_filter_interrupt(ts) == IRQ_HANDLED) {
@@ -1456,20 +1456,20 @@ static irqreturn_t sec_ts_irq_thread(int irq, void *ptr)
 
 	mutex_lock(&ts->eventlock);
 
-	sec_ts_read_event(ts);
+	sec_ts_y661_read_event(ts);
 
 	mutex_unlock(&ts->eventlock);
 
 	return IRQ_HANDLED;
 }
 
-int get_tsp_status(void)
+int get_y661_tsp_status(void)
 {
 	return 0;
 }
-EXPORT_SYMBOL(get_tsp_status);
+EXPORT_SYMBOL(get_y661_tsp_status);
 
-void sec_ts_set_charger(bool enable)
+void sec_ts_y661_set_charger(bool enable)
 {
 	return;
 #if 0
@@ -1478,21 +1478,21 @@ void sec_ts_set_charger(bool enable)
 	u8 noise_mode_off[] = {0x00};
 
 	if (enable) {
-		input_info(true, &ts->client->dev, "sec_ts_set_charger : charger CONNECTED!!\n");
-		ret = sec_ts_i2c_write(ts, SEC_TS_CMD_NOISE_MODE, noise_mode_on, sizeof(noise_mode_on));
+		input_info(true, &ts->client->dev, "sec_ts_y661_set_charger : charger CONNECTED!!\n");
+		ret = sec_ts_y661_i2c_write(ts, SEC_TS_CMD_NOISE_MODE, noise_mode_on, sizeof(noise_mode_on));
 		if (ret < 0)
-			input_err(true, &ts->client->dev, "sec_ts_set_charger: fail to write NOISE_ON\n");
+			input_err(true, &ts->client->dev, "sec_ts_y661_set_charger: fail to write NOISE_ON\n");
 	} else {
-		input_info(true, &ts->client->dev, "sec_ts_set_charger : charger DISCONNECTED!!\n");
-		ret = sec_ts_i2c_write(ts, SEC_TS_CMD_NOISE_MODE, noise_mode_off, sizeof(noise_mode_off));
+		input_info(true, &ts->client->dev, "sec_ts_y661_set_charger : charger DISCONNECTED!!\n");
+		ret = sec_ts_y661_i2c_write(ts, SEC_TS_CMD_NOISE_MODE, noise_mode_off, sizeof(noise_mode_off));
 		if (ret < 0)
-			input_err(true, &ts->client->dev, "sec_ts_set_charger: fail to write NOISE_OFF\n");
+			input_err(true, &ts->client->dev, "sec_ts_y661_set_charger: fail to write NOISE_OFF\n");
 	}
 #endif
 }
-EXPORT_SYMBOL(sec_ts_set_charger);
+EXPORT_SYMBOL(sec_ts_y661_set_charger);
 
-int sec_ts_glove_mode_enables(struct sec_ts_data *ts, int mode)
+int sec_ts_y661_glove_mode_enables(struct sec_ts_y661_data *ts, int mode)
 {
 	int ret;
 
@@ -1507,7 +1507,7 @@ int sec_ts_glove_mode_enables(struct sec_ts_data *ts, int mode)
 		goto glove_enable_err;
 	}
 
-	ret = sec_ts_i2c_write(ts, SEC_TS_CMD_SET_TOUCHFUNCTION, (u8 *)&ts->touch_functions, 2);
+	ret = sec_ts_y661_i2c_write(ts, SEC_TS_CMD_SET_TOUCHFUNCTION, (u8 *)&ts->touch_functions, 2);
 	if (ret < 0) {
 		input_err(true, &ts->client->dev, "%s: Failed to send command", __func__);
 		goto glove_enable_err;
@@ -1521,9 +1521,9 @@ int sec_ts_glove_mode_enables(struct sec_ts_data *ts, int mode)
 glove_enable_err:
 	return -EIO;
 }
-EXPORT_SYMBOL(sec_ts_glove_mode_enables);
+EXPORT_SYMBOL(sec_ts_y661_glove_mode_enables);
 
-int sec_ts_set_cover_type(struct sec_ts_data *ts, bool enable)
+int sec_ts_y661_set_cover_type(struct sec_ts_y661_data *ts, bool enable)
 {
 	int ret;
 
@@ -1564,14 +1564,14 @@ int sec_ts_set_cover_type(struct sec_ts_data *ts, bool enable)
 	}
 
 	if (enable) {
-		ret = sec_ts_i2c_write(ts, SEC_TS_CMD_SET_COVERTYPE, &ts->cover_cmd, 1);
+		ret = sec_ts_y661_i2c_write(ts, SEC_TS_CMD_SET_COVERTYPE, &ts->cover_cmd, 1);
 		if (ret < 0) {
 			input_err(true, &ts->client->dev, "%s: Failed to send covertype command: %d", __func__, ts->cover_cmd);
 			goto cover_enable_err;
 		}
 	}
 
-	ret = sec_ts_i2c_write(ts, SEC_TS_CMD_SET_TOUCHFUNCTION, (u8 *)&(ts->touch_functions), 2);
+	ret = sec_ts_y661_i2c_write(ts, SEC_TS_CMD_SET_TOUCHFUNCTION, (u8 *)&(ts->touch_functions), 2);
 	if (ret < 0) {
 		input_err(true, &ts->client->dev, "%s: Failed to send command", __func__);
 		goto cover_enable_err;
@@ -1587,9 +1587,9 @@ cover_enable_err:
 
 
 }
-EXPORT_SYMBOL(sec_ts_set_cover_type);
+EXPORT_SYMBOL(sec_ts_y661_set_cover_type);
 
-void sec_ts_set_grip_type(struct sec_ts_data *ts, u8 set_type)
+void sec_ts_y661_set_grip_type(struct sec_ts_y661_data *ts, u8 set_type)
 {
 	u8 mode = G_NONE;
 
@@ -1613,13 +1613,13 @@ void sec_ts_set_grip_type(struct sec_ts_data *ts, u8 set_type)
 	}
 
 	if (mode)
-		set_grip_data_to_ic(ts, mode);
+		set_grip_data_to_ic_y661(ts, mode);
 
 }
 
 /* for debugging--------------------------------------------------------------------------------------*/
 
-static int sec_ts_pinctrl_configure(struct sec_ts_data *ts, bool enable)
+static int sec_ts_y661_pinctrl_configure(struct sec_ts_y661_data *ts, bool enable)
 {
 	struct pinctrl_state *state;
 
@@ -1642,10 +1642,10 @@ static int sec_ts_pinctrl_configure(struct sec_ts_data *ts, bool enable)
 
 }
 
-static int sec_ts_power(void *data, bool on)
+static int sec_ts_y661_power(void *data, bool on)
 {
-	struct sec_ts_data *ts = (struct sec_ts_data *)data;
-	const struct sec_ts_plat_data *pdata = ts->plat_data;
+	struct sec_ts_y661_data *ts = (struct sec_ts_y661_data *)data;
+	const struct sec_ts_y661_plat_data *pdata = ts->plat_data;
 	struct regulator *regulator_dvdd = NULL;
 	struct regulator *regulator_avdd = NULL;
 	static bool enabled;
@@ -1677,7 +1677,7 @@ static int sec_ts_power(void *data, bool on)
 			goto out;
 		}
 
-		sec_ts_delay(1);
+		sec_ts_y661_delay(1);
 
 		ret = regulator_enable(regulator_avdd);
 		if (ret) {
@@ -1703,10 +1703,10 @@ error:
 	return ret;
 }
 
-static int sec_ts_parse_dt(struct i2c_client *client)
+static int sec_ts_y661_parse_dt(struct i2c_client *client)
 {
 	struct device *dev = &client->dev;
-	struct sec_ts_plat_data *pdata = dev->platform_data;
+	struct sec_ts_y661_plat_data *pdata = dev->platform_data;
 	struct device_node *np = dev->of_node;
 	u32 coords[2];
 	int ret = 0;
@@ -1848,7 +1848,7 @@ static int sec_ts_parse_dt(struct i2c_client *client)
 		return -EINVAL;
 	}
 
-	pdata->power = sec_ts_power;
+	pdata->power = sec_ts_y661_power;
 
 	if (of_property_read_u32(np, "sec,always_lpmode", &pdata->always_lpmode) < 0)
 		pdata->always_lpmode = 0;
@@ -1887,13 +1887,13 @@ static int sec_ts_parse_dt(struct i2c_client *client)
 	return ret;
 }
 
-int sec_ts_read_information(struct sec_ts_data *ts)
+int sec_ts_y661_read_information(struct sec_ts_y661_data *ts)
 {
 	unsigned char data[13] = { 0 };
 	int ret;
 
 	memset(data, 0x0, 3);
-	ret = sec_ts_i2c_read(ts, SEC_TS_READ_ID, data, 3);
+	ret = sec_ts_y661_i2c_read(ts, SEC_TS_READ_ID, data, 3);
 	if (ret < 0) {
 		input_err(true, &ts->client->dev,
 				"%s: failed to read device id(%d)\n",
@@ -1905,7 +1905,7 @@ int sec_ts_read_information(struct sec_ts_data *ts)
 			"%s: %X, %X, %X\n",
 			__func__, data[0], data[1], data[2]);
 	memset(data, 0x0, 11);
-	ret = sec_ts_i2c_read(ts,  SEC_TS_READ_PANEL_INFO, data, 11);
+	ret = sec_ts_y661_i2c_read(ts,  SEC_TS_READ_PANEL_INFO, data, 11);
 	if (ret < 0) {
 		input_err(true, &ts->client->dev,
 				"%s: failed to read sub id(%d)\n",
@@ -1929,7 +1929,7 @@ int sec_ts_read_information(struct sec_ts_data *ts)
 	ts->rx_count = data[9];
 
 	data[0] = 0;
-	ret = sec_ts_i2c_read(ts, SEC_TS_READ_BOOT_STATUS, data, 1);
+	ret = sec_ts_y661_i2c_read(ts, SEC_TS_READ_BOOT_STATUS, data, 1);
 	if (ret < 0) {
 		input_err(true, &ts->client->dev,
 				"%s: failed to read sub id(%d)\n",
@@ -1942,7 +1942,7 @@ int sec_ts_read_information(struct sec_ts_data *ts)
 			__func__, data[0]);
 
 	memset(data, 0x0, 4);
-	ret = sec_ts_i2c_read(ts, SEC_TS_READ_TS_STATUS, data, 4);
+	ret = sec_ts_y661_i2c_read(ts, SEC_TS_READ_TS_STATUS, data, 4);
 	if (ret < 0) {
 		input_err(true, &ts->client->dev,
 				"%s: failed to read sub id(%d)\n",
@@ -1953,7 +1953,7 @@ int sec_ts_read_information(struct sec_ts_data *ts)
 	input_info(true, &ts->client->dev,
 			"%s: TOUCH STATUS : %02X, %02X, %02X, %02X\n",
 			__func__, data[0], data[1], data[2], data[3]);
-	ret = sec_ts_i2c_read(ts, SEC_TS_CMD_SET_TOUCHFUNCTION,  (u8 *)&(ts->touch_functions), 2);
+	ret = sec_ts_y661_i2c_read(ts, SEC_TS_CMD_SET_TOUCHFUNCTION,  (u8 *)&(ts->touch_functions), 2);
 	if (ret < 0) {
 		input_err(true, &ts->client->dev,
 				"%s: failed to read touch functions(%d)\n",
@@ -1969,7 +1969,7 @@ int sec_ts_read_information(struct sec_ts_data *ts)
 }
 
 #ifdef SEC_TS_SUPPORT_SPONGELIB
-int sec_ts_set_custom_library(struct sec_ts_data *ts)
+int sec_ts_y661_set_custom_library(struct sec_ts_y661_data *ts)
 {
 	u8 data[3] = { 0 };
 	int ret;
@@ -1979,23 +1979,23 @@ int sec_ts_set_custom_library(struct sec_ts_data *ts)
 
 	data[2] = ts->lowpower_mode;
 
-	ret = sec_ts_i2c_write(ts, SEC_TS_CMD_SPONGE_WRITE_PARAM, &data[0], 3);
+	ret = sec_ts_y661_i2c_write(ts, SEC_TS_CMD_SPONGE_WRITE_PARAM, &data[0], 3);
 	if (ret < 0)
 		input_err(true, &ts->client->dev, "%s: Failed to Sponge\n", __func__);
 
-	ret = sec_ts_i2c_write(ts, SEC_TS_CMD_SPONGE_NOTIFY_PACKET, NULL, 0);
+	ret = sec_ts_y661_i2c_write(ts, SEC_TS_CMD_SPONGE_NOTIFY_PACKET, NULL, 0);
 	if (ret < 0)
 		input_err(true, &ts->client->dev, "%s: Failed to send NOTIFY SPONGE\n", __func__);
 
 	return ret;
 }
 
-int sec_ts_check_custom_library(struct sec_ts_data *ts)
+int sec_ts_y661_check_custom_library(struct sec_ts_y661_data *ts)
 {
 	u8 data[10] = { 0 };
 	int ret = -1;
 
-	ret = ts->sec_ts_i2c_read(ts, SEC_TS_CMD_SPONGE_GET_INFO, &data[0], 10);
+	ret = ts->sec_ts_y661_i2c_read(ts, SEC_TS_CMD_SPONGE_GET_INFO, &data[0], 10);
 
 	input_info(true, &ts->client->dev,
 			"%s: (%d) %c%c%c%c, || %02X, %02X, %02X, %02X, || %02X, %02X\n",
@@ -2018,13 +2018,13 @@ int sec_ts_check_custom_library(struct sec_ts_data *ts)
 }
 #endif
 
-static void sec_ts_set_input_prop(struct sec_ts_data *ts, struct input_dev *dev, u8 propbit)
+static void sec_ts_y661_set_input_prop(struct sec_ts_y661_data *ts, struct input_dev *dev, u8 propbit)
 {
-	static char sec_ts_phys[64] = { 0 };
+	static char sec_ts_y661_phys[64] = { 0 };
 
-	snprintf(sec_ts_phys, sizeof(sec_ts_phys), "%s/input1",
+	snprintf(sec_ts_y661_phys, sizeof(sec_ts_y661_phys), "%s/input1",
 			dev->name);
-	dev->phys = sec_ts_phys;
+	dev->phys = sec_ts_y661_phys;
 	dev->id.bustype = BUS_I2C;
 	dev->dev.parent = &ts->client->dev;
 
@@ -2072,11 +2072,11 @@ static void sec_ts_set_input_prop(struct sec_ts_data *ts, struct input_dev *dev,
 	input_set_drvdata(dev, ts);
 }
 
-static int sec_ts_probe(struct i2c_client *client, const struct i2c_device_id *id)
+static int sec_ts_y661_probe(struct i2c_client *client, const struct i2c_device_id *id)
 {
-	struct sec_ts_data *ts;
+	struct sec_ts_y661_data *ts;
 	struct exynos5_i2c *i2c_master = (struct exynos5_i2c *)client->adapter->algo_data;
-	struct sec_ts_plat_data *pdata;
+	struct sec_ts_y661_plat_data *pdata;
 	int ret = 0;
 	bool force_update = false;
 	bool valid_firmware_integrity = false;
@@ -2094,7 +2094,7 @@ static int sec_ts_probe(struct i2c_client *client, const struct i2c_device_id *i
 	/* parse dt */
 	if (client->dev.of_node) {
 		pdata = devm_kzalloc(&client->dev,
-				sizeof(struct sec_ts_plat_data), GFP_KERNEL);
+				sizeof(struct sec_ts_y661_plat_data), GFP_KERNEL);
 
 		if (!pdata) {
 			input_err(true, &client->dev, "%s: Failed to allocate platform data\n", __func__);
@@ -2103,7 +2103,7 @@ static int sec_ts_probe(struct i2c_client *client, const struct i2c_device_id *i
 
 		client->dev.platform_data = pdata;
 
-		ret = sec_ts_parse_dt(client);
+		ret = sec_ts_y661_parse_dt(client);
 		if (ret) {
 			input_err(true, &client->dev, "%s: Failed to parse dt\n", __func__);
 			goto error_allocate_mem;
@@ -2125,7 +2125,7 @@ static int sec_ts_probe(struct i2c_client *client, const struct i2c_device_id *i
 	if (IS_ERR(pdata->pinctrl))
 		input_err(true, &client->dev, "%s: could not get pinctrl\n", __func__);
 
-	ts = kzalloc(sizeof(struct sec_ts_data), GFP_KERNEL);
+	ts = kzalloc(sizeof(struct sec_ts_y661_data), GFP_KERNEL);
 	if (!ts)
 		goto error_allocate_mem;
 
@@ -2135,15 +2135,15 @@ static int sec_ts_probe(struct i2c_client *client, const struct i2c_device_id *i
 	ts->fw_addr = 0x00002000;
 	ts->para_addr = 0x18000;
 	ts->flash_page_size = SEC_TS_FW_BLK_SIZE_DEFAULT;
-	ts->sec_ts_i2c_read = sec_ts_i2c_read;
-	ts->sec_ts_i2c_write = sec_ts_i2c_write;
-	ts->sec_ts_i2c_write_burst = sec_ts_i2c_write_burst;
-	ts->sec_ts_i2c_read_bulk = sec_ts_i2c_read_bulk;
+	ts->sec_ts_y661_i2c_read = sec_ts_y661_i2c_read;
+	ts->sec_ts_y661_i2c_write = sec_ts_y661_i2c_write;
+	ts->sec_ts_y661_i2c_write_burst = sec_ts_y661_i2c_write_burst;
+	ts->sec_ts_y661_i2c_read_bulk = sec_ts_y661_i2c_read_bulk;
 	ts->i2c_burstmax = pdata->i2c_burstmax;
 #ifdef USE_POWER_RESET_WORK
-	INIT_DELAYED_WORK(&ts->reset_work, sec_ts_reset_work);
+	INIT_DELAYED_WORK(&ts->reset_work, sec_ts_y661_reset_work);
 #endif
-	INIT_DELAYED_WORK(&ts->work_read_info, sec_ts_read_info_work);
+	INIT_DELAYED_WORK(&ts->work_read_info, sec_ts_y661_read_info_work);
 
 	i2c_set_clientdata(client, ts);
 
@@ -2172,9 +2172,9 @@ static int sec_ts_probe(struct i2c_client *client, const struct i2c_device_id *i
 	i2c_master->stop_after_trans = 1;
 
 	ts->touch_count = 0;
-	ts->sec_ts_i2c_write = sec_ts_i2c_write;
-	ts->sec_ts_i2c_read = sec_ts_i2c_read;
-	ts->sec_ts_read_sponge = sec_ts_read_from_sponge;
+	ts->sec_ts_y661_i2c_write = sec_ts_y661_i2c_write;
+	ts->sec_ts_y661_i2c_read = sec_ts_y661_i2c_read;
+	ts->sec_ts_y661_read_sponge = sec_ts_y661_read_from_sponge;
 
 	ts->max_z_value = 0;
 	ts->min_z_value = 0xFFFFFFFF;
@@ -2198,20 +2198,20 @@ static int sec_ts_probe(struct i2c_client *client, const struct i2c_device_id *i
 
 	input_info(true, &client->dev, "%s: init resource\n", __func__);
 
-	sec_ts_pinctrl_configure(ts, true);
+	sec_ts_y661_pinctrl_configure(ts, true);
 
 	/* power enable */
-	sec_ts_power(ts, true);
+	sec_ts_y661_power(ts, true);
 	if (!pdata->regulator_boot_on)
-		sec_ts_delay(70);
+		sec_ts_y661_delay(70);
 	ts->power_status = SEC_TS_STATE_POWER_ON;
 	ts->external_factory = false;
 
-	sec_ts_wait_for_ready(ts, SEC_TS_ACK_BOOT_COMPLETE);
+	sec_ts_y661_wait_for_ready(ts, SEC_TS_ACK_BOOT_COMPLETE);
 
 	input_info(true, &client->dev, "%s: power enable\n", __func__);
 
-	ret = sec_ts_i2c_read(ts, SEC_TS_READ_DEVICE_ID, deviceID, 5);
+	ret = sec_ts_y661_i2c_read(ts, SEC_TS_READ_DEVICE_ID, deviceID, 5);
 	if (ret < 0)
 		input_err(true, &ts->client->dev, "%s: failed to read device ID(%d)\n", __func__, ret);
 	else
@@ -2219,7 +2219,7 @@ static int sec_ts_probe(struct i2c_client *client, const struct i2c_device_id *i
 				"%s: TOUCH DEVICE ID : %02X, %02X, %02X, %02X, %02X\n", __func__,
 				deviceID[0], deviceID[1], deviceID[2], deviceID[3], deviceID[4]);
 
-	ret = sec_ts_i2c_read(ts, SEC_TS_READ_FIRMWARE_INTEGRITY, &result, 1);
+	ret = sec_ts_y661_i2c_read(ts, SEC_TS_READ_FIRMWARE_INTEGRITY, &result, 1);
 	if (ret < 0) {
 		input_err(true, &ts->client->dev, "%s: failed to integrity check (%d)\n", __func__, ret);
 	} else {
@@ -2234,13 +2234,13 @@ static int sec_ts_probe(struct i2c_client *client, const struct i2c_device_id *i
 		}
 	}
 
-	ret = sec_ts_i2c_read(ts, SEC_TS_READ_BOOT_STATUS, &data[0], 1);
+	ret = sec_ts_y661_i2c_read(ts, SEC_TS_READ_BOOT_STATUS, &data[0], 1);
 	if (ret < 0) {
 		input_err(true, &ts->client->dev,
 				"%s: failed to read sub id(%d)\n",
 				__func__, ret);
 	} else {
-		ret = sec_ts_i2c_read(ts, SEC_TS_READ_TS_STATUS, &data[1], 4);
+		ret = sec_ts_y661_i2c_read(ts, SEC_TS_READ_TS_STATUS, &data[1], 4);
 		if (ret < 0) {
 			input_err(true, &ts->client->dev,
 					"%s: failed to touch status(%d)\n",
@@ -2261,26 +2261,26 @@ static int sec_ts_probe(struct i2c_client *client, const struct i2c_device_id *i
 		force_update = false;
 
 #ifdef SEC_TS_FW_UPDATE_ON_PROBE
-	ret = sec_ts_firmware_update_on_probe(ts, force_update);
+	ret = sec_ts_y661_firmware_update_on_probe(ts, force_update);
 	if (ret < 0)
 		goto err_init;
 #else
 	input_info(true, &ts->client->dev, "%s: fw update on probe disabled!\n", __func__);
 #endif
 
-	ret = sec_ts_read_information(ts);
+	ret = sec_ts_y661_read_information(ts);
 	if (ret < 0) {
 		input_err(true, &ts->client->dev, "%s: fail to read information 0x%x\n", __func__, ret);
 		goto err_init;
 	}
 
 	ts->touch_functions |= SEC_TS_DEFAULT_ENABLE_BIT_SETFUNC;
-	ret = sec_ts_i2c_write(ts, SEC_TS_CMD_SET_TOUCHFUNCTION, (u8 *)&ts->touch_functions, 2);
+	ret = sec_ts_y661_i2c_write(ts, SEC_TS_CMD_SET_TOUCHFUNCTION, (u8 *)&ts->touch_functions, 2);
 	if (ret < 0)
 		input_err(true, &ts->client->dev, "%s: Failed to send touch func_mode command", __func__);
 
 	/* Sense_on */
-	ret = sec_ts_i2c_write(ts, SEC_TS_CMD_SENSE_ON, NULL, 0);
+	ret = sec_ts_y661_i2c_write(ts, SEC_TS_CMD_SENSE_ON, NULL, 0);
 	if (ret < 0) {
 		input_err(true, &ts->client->dev, "%s: fail to write Sense_on\n", __func__);
 		goto err_init;
@@ -2294,15 +2294,15 @@ static int sec_ts_probe(struct i2c_client *client, const struct i2c_device_id *i
 
 	if (ts->plat_data->support_dex) {
 		ts->input_dev_pad->name = "sec_touchpad";
-		sec_ts_set_input_prop(ts, ts->input_dev_pad, INPUT_PROP_POINTER);
+		sec_ts_y661_set_input_prop(ts, ts->input_dev_pad, INPUT_PROP_POINTER);
 	}
 	ts->dex_name = "";
 
 	ts->input_dev->name = "sec_touchscreen";
-	sec_ts_set_input_prop(ts, ts->input_dev, INPUT_PROP_DIRECT);
+	sec_ts_y661_set_input_prop(ts, ts->input_dev, INPUT_PROP_DIRECT);
 #ifdef USE_OPEN_CLOSE
-	ts->input_dev->open = sec_ts_input_open;
-	ts->input_dev->close = sec_ts_input_close;
+	ts->input_dev->open = sec_ts_y661_input_open;
+	ts->input_dev->close = sec_ts_y661_input_close;
 #endif
 	ts->input_dev_touch = ts->input_dev;
 
@@ -2321,7 +2321,7 @@ static int sec_ts_probe(struct i2c_client *client, const struct i2c_device_id *i
 
 	input_info(true, &ts->client->dev, "%s: request_irq = %d\n", __func__, client->irq);
 
-	ret = request_threaded_irq(client->irq, NULL, sec_ts_irq_thread,
+	ret = request_threaded_irq(client->irq, NULL, sec_ts_y661_irq_thread,
 			ts->plat_data->irq_type, SEC_TS_I2C_NAME, ts);
 	if (ret < 0) {
 		input_err(true, &ts->client->dev, "%s: Unable to request threaded irq\n", __func__);
@@ -2329,7 +2329,7 @@ static int sec_ts_probe(struct i2c_client *client, const struct i2c_device_id *i
 	}
 
 #ifdef CONFIG_TRUSTONIC_TRUSTED_UI
-	tsp_info = ts;
+	y661_tsp_info = ts;
 
 	trustedui_set_tsp_irq(client->irq);
 	input_info(true, &client->dev, "%s[%d] called!\n",
@@ -2338,9 +2338,9 @@ static int sec_ts_probe(struct i2c_client *client, const struct i2c_device_id *i
 
 	/* need remove below resource @ remove driver */
 #if !defined(CONFIG_SAMSUNG_PRODUCT_SHIP)
-	sec_ts_raw_device_init(ts);
+	sec_ts_y661_raw_device_init(ts);
 #endif
-	sec_ts_fn_init(ts);
+	sec_ts_y661_fn_init(ts);
 
 #ifdef CONFIG_SECURE_TOUCH
 	if (sysfs_create_group(&ts->input_dev->dev.kobj, &secure_attr_group) < 0)
@@ -2352,9 +2352,9 @@ static int sec_ts_probe(struct i2c_client *client, const struct i2c_device_id *i
 	device_init_wakeup(&client->dev, true);
 
 #ifdef SEC_TS_SUPPORT_SPONGELIB
-	sec_ts_check_custom_library(ts);
+	sec_ts_y661_check_custom_library(ts);
 	if (ts->use_sponge)
-		sec_ts_set_custom_library(ts);
+		sec_ts_y661_set_custom_library(ts);
 
 #endif
 
@@ -2362,11 +2362,11 @@ static int sec_ts_probe(struct i2c_client *client, const struct i2c_device_id *i
 
 #if defined(CONFIG_TOUCHSCREEN_DUMP_MODE)
 	dump_callbacks.inform_dump = dump_tsp_log;
-	INIT_DELAYED_WORK(&ts->ghost_check, sec_ts_check_rawdata);
+	INIT_DELAYED_WORK(&ts->ghost_check, sec_ts_y661_check_rawdata);
 	p_ghost_check = &ts->ghost_check;
 #endif
 
-	ts_dup = ts;
+	y661_ts_dup = ts;
 	ts->probe_done = true;
 
 	input_err(true, &ts->client->dev, "%s: done\n", __func__);
@@ -2379,7 +2379,7 @@ static int sec_ts_probe(struct i2c_client *client, const struct i2c_device_id *i
 #ifdef CONFIG_SECURE_TOUCH
 	secure_touch_remove(ts);
 #endif
-	sec_ts_fn_remove(ts);
+	sec_ts_y661_fn_remove(ts);
 	free_irq(client->irq, ts);
 #endif
 err_irq:
@@ -2396,7 +2396,7 @@ err_input_register_device:
 err_allocate_frame:
 err_init:
 	wake_lock_destroy(&ts->wakelock);
-	sec_ts_power(ts, false);
+	sec_ts_y661_power(ts, false);
 	if (ts->plat_data->support_dex) {
 		if (ts->input_dev_pad)
 			input_free_device(ts->input_dev_pad);
@@ -2417,21 +2417,21 @@ error_allocate_mem:
 
 error_allocate_pdata:
 	if (ret == -ECONNREFUSED)
-		sec_ts_delay(100);
+		sec_ts_y661_delay(100);
 	ret = -ENODEV;
 #ifdef CONFIG_TOUCHSCREEN_DUMP_MODE
 	p_ghost_check = NULL;
 #endif
-	ts_dup = NULL;
+	y661_ts_dup = NULL;
 #ifdef CONFIG_TRUSTONIC_TRUSTED_UI
-	tsp_info = NULL;
+	y661_tsp_info = NULL;
 #endif
 	input_err(true, &client->dev, "%s: failed(%d)\n", __func__, ret);
 	input_log_fix();
 	return ret;
 }
 
-void sec_ts_unlocked_release_all_finger(struct sec_ts_data *ts)
+void sec_ts_y661_unlocked_release_all_finger(struct sec_ts_y661_data *ts)
 {
 	int i;
 
@@ -2484,7 +2484,7 @@ void sec_ts_unlocked_release_all_finger(struct sec_ts_data *ts)
 
 }
 
-void sec_ts_locked_release_all_finger(struct sec_ts_data *ts)
+void sec_ts_y661_locked_release_all_finger(struct sec_ts_y661_data *ts)
 {
 	int i;
 
@@ -2541,9 +2541,9 @@ void sec_ts_locked_release_all_finger(struct sec_ts_data *ts)
 }
 
 #ifdef USE_POWER_RESET_WORK
-static void sec_ts_reset_work(struct work_struct *work)
+static void sec_ts_y661_reset_work(struct work_struct *work)
 {
-	struct sec_ts_data *ts = container_of(work, struct sec_ts_data,
+	struct sec_ts_y661_data *ts = container_of(work, struct sec_ts_y661_data,
 			reset_work.work);
 	int ret;
 
@@ -2561,11 +2561,11 @@ static void sec_ts_reset_work(struct work_struct *work)
 	ts->reset_is_on_going = true;
 	input_info(true, &ts->client->dev, "%s\n", __func__);
 
-	sec_ts_stop_device(ts);
+	sec_ts_y661_stop_device(ts);
 
-	sec_ts_delay(30);
+	sec_ts_y661_delay(30);
 
-	ret = sec_ts_start_device(ts);
+	ret = sec_ts_y661_start_device(ts);
 	if (ret < 0) {
 		input_err(true, &ts->client->dev, "%s: failed to reset, ret:%d\n", __func__, ret);
 		ts->reset_is_on_going = false;
@@ -2577,7 +2577,7 @@ static void sec_ts_reset_work(struct work_struct *work)
 	if (ts->input_dev_touch->disabled) {
 		input_err(true, &ts->client->dev, "%s: call input_close\n", __func__);
 
-		sec_ts_input_close(ts->input_dev);
+		sec_ts_y661_input_close(ts->input_dev);
 
 		if (!ts->reset_is_on_going)
 			return;
@@ -2592,11 +2592,11 @@ static void sec_ts_reset_work(struct work_struct *work)
 			}
 
 			disable_irq(ts->client->irq);
-			ret = ts->sec_ts_i2c_write(ts, SEC_TS_CMD_SPONGE_WRITE_PARAM, &data[0], 10);
+			ret = ts->sec_ts_y661_i2c_write(ts, SEC_TS_CMD_SPONGE_WRITE_PARAM, &data[0], 10);
 			if (ret < 0)
 				input_err(true, &ts->client->dev, "%s: Failed to write offset\n", __func__);
 
-			ret = ts->sec_ts_i2c_write(ts, SEC_TS_CMD_SPONGE_NOTIFY_PACKET, NULL, 0);
+			ret = ts->sec_ts_y661_i2c_write(ts, SEC_TS_CMD_SPONGE_NOTIFY_PACKET, NULL, 0);
 			if (ret < 0)
 				input_err(true, &ts->client->dev, "%s: Failed to send notify\n", __func__);
 			enable_irq(ts->client->irq);
@@ -2606,31 +2606,31 @@ static void sec_ts_reset_work(struct work_struct *work)
 }
 #endif
 
-static void sec_ts_read_info_work(struct work_struct *work)
+static void sec_ts_y661_read_info_work(struct work_struct *work)
 {
-	struct sec_ts_data *ts = container_of(work, struct sec_ts_data,
+	struct sec_ts_y661_data *ts = container_of(work, struct sec_ts_y661_data,
 			work_read_info.work);
 
-	ts->nv = get_tsp_nvm_data(ts, SEC_TS_NVM_OFFSET_FAC_RESULT);
-	ts->cal_count = get_tsp_nvm_data(ts, SEC_TS_NVM_OFFSET_CAL_COUNT);
-	ts->pressure_cal_base = get_tsp_nvm_data(ts, SEC_TS_NVM_OFFSET_PRESSURE_BASE_CAL_COUNT);
-	ts->pressure_cal_delta = get_tsp_nvm_data(ts, SEC_TS_NVM_OFFSET_PRESSURE_DELTA_CAL_COUNT);
+	ts->nv = get_y661_tsp_nvm_data(ts, SEC_TS_NVM_OFFSET_FAC_RESULT);
+	ts->cal_count = get_y661_tsp_nvm_data(ts, SEC_TS_NVM_OFFSET_CAL_COUNT);
+	ts->pressure_cal_base = get_y661_tsp_nvm_data(ts, SEC_TS_NVM_OFFSET_PRESSURE_BASE_CAL_COUNT);
+	ts->pressure_cal_delta = get_y661_tsp_nvm_data(ts, SEC_TS_NVM_OFFSET_PRESSURE_DELTA_CAL_COUNT);
 
 	input_info(true, &ts->client->dev, "%s: fac_nv:%02X, cal_count:%02X\n",
 			__func__, ts->nv, ts->cal_count);
 
 #ifdef PAT_CONTROL
-	ts->tune_fix_ver = (get_tsp_nvm_data(ts, SEC_TS_NVM_OFFSET_TUNE_VERSION) << 8) |
-		get_tsp_nvm_data(ts, SEC_TS_NVM_OFFSET_TUNE_VERSION + 1);
+	ts->tune_fix_ver = (get_y661_tsp_nvm_data(ts, SEC_TS_NVM_OFFSET_TUNE_VERSION) << 8) |
+		get_y661_tsp_nvm_data(ts, SEC_TS_NVM_OFFSET_TUNE_VERSION + 1);
 	input_info(true, &ts->client->dev, "%s: tune_fix_ver [%04X]\n", __func__, ts->tune_fix_ver);
 #endif
 	input_log_fix();
 
-	sec_ts_run_rawdata_all(ts, false);
+	sec_ts_y661_run_rawdata_all(ts, false);
 
 }
 
-int sec_ts_set_lowpowermode(struct sec_ts_data *ts, u8 mode)
+int sec_ts_y661_set_lowpowermode(struct sec_ts_y661_data *ts, u8 mode)
 {
 	int ret;
 	int retrycnt = 0;
@@ -2642,13 +2642,13 @@ int sec_ts_set_lowpowermode(struct sec_ts_data *ts, u8 mode)
 
 	if (mode) {
 		if (ts->use_sponge) {
-			ret = sec_ts_set_custom_library(ts);
+			ret = sec_ts_y661_set_custom_library(ts);
 			if (ret < 0)
 				goto i2c_error;
 		}
 
 		data = (ts->lowpower_mode & SEC_TS_MODE_LOWPOWER_FLAG) >> 1;
-		ret = sec_ts_i2c_write(ts, SEC_TS_CMD_WAKEUP_GESTURE_MODE, &data, 1);
+		ret = sec_ts_y661_i2c_write(ts, SEC_TS_CMD_WAKEUP_GESTURE_MODE, &data, 1);
 		if (ret < 0) {
 			input_err(true, &ts->client->dev, "%s: Failed to set\n", __func__);
 			goto i2c_error;
@@ -2656,17 +2656,17 @@ int sec_ts_set_lowpowermode(struct sec_ts_data *ts, u8 mode)
 	}
 
 retry_pmode:
-	ret = sec_ts_i2c_write(ts, SEC_TS_CMD_SET_POWER_MODE, &mode, 1);
+	ret = sec_ts_y661_i2c_write(ts, SEC_TS_CMD_SET_POWER_MODE, &mode, 1);
 	if (ret < 0) {
 		input_err(true, &ts->client->dev, "%s: failed\n", __func__);
 		goto i2c_error;
 	}
 
-	sec_ts_delay(50);
+	sec_ts_y661_delay(50);
 
 	/* read data */
 
-	ret = sec_ts_i2c_read(ts, SEC_TS_CMD_SET_POWER_MODE, &para, 1);
+	ret = sec_ts_y661_i2c_read(ts, SEC_TS_CMD_SET_POWER_MODE, &para, 1);
 	if (ret < 0) {
 		input_err(true, &ts->client->dev, "%s: read power mode failed!\n", __func__);
 		goto i2c_error;
@@ -2688,13 +2688,13 @@ retry_pmode:
 	}
 
 	if (mode == TO_LOWPOWER_MODE) {
-		ret = sec_ts_i2c_write(ts, SEC_TS_CMD_CLEAR_EVENT_STACK, NULL, 0);
+		ret = sec_ts_y661_i2c_write(ts, SEC_TS_CMD_CLEAR_EVENT_STACK, NULL, 0);
 		if (ret < 0) {
 			input_err(true, &ts->client->dev, "%s: i2c write clear event failed\n", __func__);
 			goto i2c_error;
 		}
 
-		sec_ts_locked_release_all_finger(ts);
+		sec_ts_y661_locked_release_all_finger(ts);
 
 		ts->power_status = SEC_TS_STATE_LPM;
 	} else {
@@ -2707,9 +2707,9 @@ i2c_error:
 }
 
 #ifdef USE_OPEN_CLOSE
-static int sec_ts_input_open(struct input_dev *dev)
+static int sec_ts_y661_input_open(struct input_dev *dev)
 {
-	struct sec_ts_data *ts = input_get_drvdata(dev);
+	struct sec_ts_y661_data *ts = input_get_drvdata(dev);
 	int ret;
 
 	ts->input_closed = false;
@@ -2738,30 +2738,30 @@ static int sec_ts_input_open(struct input_dev *dev)
 #ifdef USE_RESET_EXIT_LPM
 		schedule_delayed_work(&ts->reset_work, msecs_to_jiffies(TOUCH_RESET_DWORK_TIME));
 #else
-		sec_ts_set_lowpowermode(ts, TO_TOUCH_MODE);
+		sec_ts_y661_set_lowpowermode(ts, TO_TOUCH_MODE);
 #endif
 	} else {
-		ret = sec_ts_start_device(ts);
+		ret = sec_ts_y661_start_device(ts);
 		if (ret < 0)
 			input_err(true, &ts->client->dev, "%s: Failed to start device\n", __func__);
 	}
 
 	/* because edge and dead zone will recover soon */
-	sec_ts_set_grip_type(ts, ONLY_EDGE_HANDLER);
+	sec_ts_y661_set_grip_type(ts, ONLY_EDGE_HANDLER);
 
 	return 0;
 }
 
-static void sec_ts_input_close(struct input_dev *dev)
+static void sec_ts_y661_input_close(struct input_dev *dev)
 {
-	struct sec_ts_data *ts = input_get_drvdata(dev);
+	struct sec_ts_y661_data *ts = input_get_drvdata(dev);
 
 	ts->input_closed = true;
 
 	input_info(true, &ts->client->dev, "%s\n", __func__);
 
 #ifdef MINORITY_REPORT
-	minority_report_sync_latest_value(ts);
+	minority_report_sync_latest_value_y661(ts);
 #endif
 
 #ifdef CONFIG_TRUSTONIC_TRUSTED_UI
@@ -2795,21 +2795,21 @@ static void sec_ts_input_close(struct input_dev *dev)
 	if (ts->lowpower_mode) {
 		int ret;
 
-		ret = sec_ts_set_lowpowermode(ts, TO_LOWPOWER_MODE);
+		ret = sec_ts_y661_set_lowpowermode(ts, TO_LOWPOWER_MODE);
 		if (ts->reset_is_on_going && (ret < 0)) {
 			input_err(true, &ts->client->dev, "%s: failed to reset, ret:%d\n", __func__, ret);
 			ts->reset_is_on_going = false;
 			schedule_delayed_work(&ts->reset_work, msecs_to_jiffies(TOUCH_RESET_DWORK_TIME));
 		}
 	} else {
-		sec_ts_stop_device(ts);
+		sec_ts_y661_stop_device(ts);
 	}
 }
 #endif
 
-static int sec_ts_remove(struct i2c_client *client)
+static int sec_ts_y661_remove(struct i2c_client *client)
 {
-	struct sec_ts_data *ts = i2c_get_clientdata(client);
+	struct sec_ts_y661_data *ts = i2c_get_clientdata(client);
 
 	input_info(true, &ts->client->dev, "%s\n", __func__);
 
@@ -2828,7 +2828,7 @@ static int sec_ts_remove(struct i2c_client *client)
 
 #endif
 
-	sec_ts_fn_remove(ts);
+	sec_ts_y661_fn_remove(ts);
 
 #ifdef CONFIG_TOUCHSCREEN_DUMP_MODE
 	p_ghost_check = NULL;
@@ -2854,27 +2854,27 @@ static int sec_ts_remove(struct i2c_client *client)
 	ts->input_dev_pad = NULL;
 	ts->input_dev = NULL;
 	ts->input_dev_touch = NULL;
-	ts_dup = NULL;
+	y661_ts_dup = NULL;
 	ts->plat_data->power(ts, false);
 
 #ifdef CONFIG_TRUSTONIC_TRUSTED_UI
-	tsp_info = NULL;
+	y661_tsp_info = NULL;
 #endif
 
 	kfree(ts);
 	return 0;
 }
 
-static void sec_ts_shutdown(struct i2c_client *client)
+static void sec_ts_y661_shutdown(struct i2c_client *client)
 {
-	struct sec_ts_data *ts = i2c_get_clientdata(client);
+	struct sec_ts_y661_data *ts = i2c_get_clientdata(client);
 
 	input_info(true, &ts->client->dev, "%s\n", __func__);
 
-	sec_ts_remove(client);
+	sec_ts_y661_remove(client);
 }
 
-int sec_ts_stop_device(struct sec_ts_data *ts)
+int sec_ts_y661_stop_device(struct sec_ts_y661_data *ts)
 {
 	input_info(true, &ts->client->dev, "%s\n", __func__);
 
@@ -2888,27 +2888,27 @@ int sec_ts_stop_device(struct sec_ts_data *ts)
 	ts->power_status = SEC_TS_STATE_POWER_OFF;
 
 	disable_irq(ts->client->irq);
-	sec_ts_locked_release_all_finger(ts);
+	sec_ts_y661_locked_release_all_finger(ts);
 
 	ts->plat_data->power(ts, false);
 
 	if (ts->plat_data->enable_sync)
 		ts->plat_data->enable_sync(false);
 
-	sec_ts_pinctrl_configure(ts, false);
+	sec_ts_y661_pinctrl_configure(ts, false);
 
 out:
 	mutex_unlock(&ts->device_mutex);
 	return 0;
 }
 
-int sec_ts_start_device(struct sec_ts_data *ts)
+int sec_ts_y661_start_device(struct sec_ts_y661_data *ts)
 {
 	int ret = -1;
 
 	input_info(true, &ts->client->dev, "%s\n", __func__);
 
-	sec_ts_pinctrl_configure(ts, true);
+	sec_ts_y661_pinctrl_configure(ts, true);
 
 	mutex_lock(&ts->device_mutex);
 
@@ -2917,14 +2917,14 @@ int sec_ts_start_device(struct sec_ts_data *ts)
 		goto out;
 	}
 
-	sec_ts_locked_release_all_finger(ts);
+	sec_ts_y661_locked_release_all_finger(ts);
 
 	ts->plat_data->power(ts, true);
-	sec_ts_delay(70);
+	sec_ts_y661_delay(70);
 	ts->power_status = SEC_TS_STATE_POWER_ON;
 	ts->touch_noise_status = 0;
 
-	ret = sec_ts_wait_for_ready(ts, SEC_TS_ACK_BOOT_COMPLETE);
+	ret = sec_ts_y661_wait_for_ready(ts, SEC_TS_ACK_BOOT_COMPLETE);
 	if (ret < 0) {
 		input_err(true, &ts->client->dev,
 				"%s: Failed to wait_for_ready\n", __func__);
@@ -2935,7 +2935,7 @@ int sec_ts_start_device(struct sec_ts_data *ts)
 		ts->plat_data->enable_sync(true);
 
 	if (ts->flip_enable) {
-		ret = sec_ts_i2c_write(ts, SEC_TS_CMD_SET_COVERTYPE, &ts->cover_cmd, 1);
+		ret = sec_ts_y661_i2c_write(ts, SEC_TS_CMD_SET_COVERTYPE, &ts->cover_cmd, 1);
 		if (ret < 0)
 			goto err;
 
@@ -2950,7 +2950,7 @@ int sec_ts_start_device(struct sec_ts_data *ts)
 	}
 
 	ts->touch_functions = ts->touch_functions | SEC_TS_DEFAULT_ENABLE_BIT_SETFUNC;
-	ret = sec_ts_i2c_write(ts, SEC_TS_CMD_SET_TOUCHFUNCTION, (u8 *)&ts->touch_functions, 2);
+	ret = sec_ts_y661_i2c_write(ts, SEC_TS_CMD_SET_TOUCHFUNCTION, (u8 *)&ts->touch_functions, 2);
 	if (ret < 0) {
 		input_err(true, &ts->client->dev,
 				"%s: Failed to send touch function command\n", __func__);
@@ -2958,16 +2958,16 @@ int sec_ts_start_device(struct sec_ts_data *ts)
 	}
 
 	if (ts->use_sponge) {
-		ret = sec_ts_set_custom_library(ts);
+		ret = sec_ts_y661_set_custom_library(ts);
 		if (ret < 0)
 			goto err;
 	}
 
-	sec_ts_set_grip_type(ts, ONLY_EDGE_HANDLER);
+	sec_ts_y661_set_grip_type(ts, ONLY_EDGE_HANDLER);
 
 	if (ts->dex_mode) {
 		input_info(true, &ts->client->dev, "%s: set dex mode\n", __func__);
-		ret = ts->sec_ts_i2c_write(ts, SEC_TS_CMD_SET_DEX_MODE, &ts->dex_mode, 1);
+		ret = ts->sec_ts_y661_i2c_write(ts, SEC_TS_CMD_SET_DEX_MODE, &ts->dex_mode, 1);
 		if (ret < 0) {
 			input_err(true, &ts->client->dev,
 					"%s: failed to set dex mode %x\n", __func__, ts->dex_mode);
@@ -2977,7 +2977,7 @@ int sec_ts_start_device(struct sec_ts_data *ts)
 
 	if (ts->brush_mode) {
 		input_info(true, &ts->client->dev, "%s: set brush mode\n", __func__);
-		ret = ts->sec_ts_i2c_write(ts, SEC_TS_CMD_SET_BRUSH_MODE, &ts->brush_mode, 1);
+		ret = ts->sec_ts_y661_i2c_write(ts, SEC_TS_CMD_SET_BRUSH_MODE, &ts->brush_mode, 1);
 		if (ret < 0) {
 			input_err(true, &ts->client->dev,
 					"%s: failed to set brush mode\n", __func__);
@@ -2987,7 +2987,7 @@ int sec_ts_start_device(struct sec_ts_data *ts)
 
 	if (ts->touchable_area) {
 		input_info(true, &ts->client->dev, "%s: set 16:9 mode\n", __func__);
-		ret = ts->sec_ts_i2c_write(ts, SEC_TS_CMD_SET_TOUCHABLE_AREA, &ts->touchable_area, 1);
+		ret = ts->sec_ts_y661_i2c_write(ts, SEC_TS_CMD_SET_TOUCHABLE_AREA, &ts->touchable_area, 1);
 		if (ret < 0) {
 			input_err(true, &ts->client->dev,
 					"%s: failed to set 16:9 mode\n", __func__);
@@ -2997,7 +2997,7 @@ int sec_ts_start_device(struct sec_ts_data *ts)
 
 err:
 	/* Sense_on */
-	ret = sec_ts_i2c_write(ts, SEC_TS_CMD_SENSE_ON, NULL, 0);
+	ret = sec_ts_y661_i2c_write(ts, SEC_TS_CMD_SENSE_ON, NULL, 0);
 	if (ret < 0)
 		input_err(true, &ts->client->dev, "%s: fail to write Sense_on\n", __func__);
 
@@ -3009,9 +3009,9 @@ out:
 }
 
 #ifdef CONFIG_PM
-static int sec_ts_pm_suspend(struct device *dev)
+static int sec_ts_y661_pm_suspend(struct device *dev)
 {
-	struct sec_ts_data *ts = dev_get_drvdata(dev);
+	struct sec_ts_y661_data *ts = dev_get_drvdata(dev);
 #ifdef USE_OPEN_CLOSE
 	int retval;
 
@@ -3045,9 +3045,9 @@ out:
 	return 0;
 }
 
-static int sec_ts_pm_resume(struct device *dev)
+static int sec_ts_y661_pm_resume(struct device *dev)
 {
-	struct sec_ts_data *ts = dev_get_drvdata(dev);
+	struct sec_ts_y661_data *ts = dev_get_drvdata(dev);
 
 	if (ts->lowpower_mode)
 		complete_all(&ts->resume_done);
@@ -3057,71 +3057,71 @@ static int sec_ts_pm_resume(struct device *dev)
 #endif
 
 #ifdef CONFIG_TRUSTONIC_TRUSTED_UI
-void trustedui_mode_on(void)
+void trustedui_mode_on_y661(void)
 {
-	if (!tsp_info)
+	if (!y661_tsp_info)
 		return;
 
-	sec_ts_unlocked_release_all_finger(tsp_info);
+	sec_ts_y661_unlocked_release_all_finger(y661_tsp_info);
 
 #ifdef CONFIG_INPUT_WACOM
 	epen_disable_mode(1);
 #endif
 }
-EXPORT_SYMBOL(trustedui_mode_on);
+EXPORT_SYMBOL(trustedui_mode_on_y661);
 
 
-void trustedui_mode_off(void)
+void trustedui_mode_off_y661(void)
 {
-	if (!tsp_info)
+	if (!y661_tsp_info)
 		return;
 
 #ifdef CONFIG_INPUT_WACOM
 	epen_disable_mode(0);
 #endif
 }
-EXPORT_SYMBOL(trustedui_mode_off);
+EXPORT_SYMBOL(trustedui_mode_off_y661);
 #endif
 
-static const struct i2c_device_id sec_ts_id[] = {
+static const struct i2c_device_id sec_ts_y661_id[] = {
 	{ SEC_TS_I2C_NAME, 0 },
 	{ },
 };
 
 #ifdef CONFIG_PM
-static const struct dev_pm_ops sec_ts_dev_pm_ops = {
-	.suspend = sec_ts_pm_suspend,
-	.resume = sec_ts_pm_resume,
+static const struct dev_pm_ops sec_ts_y661_dev_pm_ops = {
+	.suspend = sec_ts_y661_pm_suspend,
+	.resume = sec_ts_y661_pm_resume,
 };
 #endif
 
 #ifdef CONFIG_OF
-static const struct of_device_id sec_ts_match_table[] = {
-	{ .compatible = "sec,sec_ts",},
+static const struct of_device_id sec_ts_y661_match_table[] = {
+	{ .compatible = "sec,sec_ts_y661",},
 	{ },
 };
 #else
-#define sec_ts_match_table NULL
+#define sec_ts_y661_match_table NULL
 #endif
 
-static struct i2c_driver sec_ts_driver = {
-	.probe		= sec_ts_probe,
-	.remove		= sec_ts_remove,
-	.shutdown	= sec_ts_shutdown,
-	.id_table	= sec_ts_id,
+static struct i2c_driver sec_ts_y661_driver = {
+	.probe		= sec_ts_y661_probe,
+	.remove		= sec_ts_y661_remove,
+	.shutdown	= sec_ts_y661_shutdown,
+	.id_table	= sec_ts_y661_id,
 	.driver = {
 		.owner	= THIS_MODULE,
 		.name	= SEC_TS_I2C_NAME,
 #ifdef CONFIG_OF
-		.of_match_table = sec_ts_match_table,
+		.of_match_table = sec_ts_y661_match_table,
 #endif
 #ifdef CONFIG_PM
-		.pm = &sec_ts_dev_pm_ops,
+		.pm = &sec_ts_y661_dev_pm_ops,
 #endif
 	},
 };
 
-static int __init sec_ts_init(void)
+static int __init sec_ts_y661_init(void)
 {
 #ifdef CONFIG_BATTERY_SAMSUNG
 	if (lpcharge == 1) {
@@ -3132,17 +3132,17 @@ static int __init sec_ts_init(void)
 #endif
 	pr_err("%s %s\n", SECLOG, __func__);
 
-	return i2c_add_driver(&sec_ts_driver);
+	return i2c_add_driver(&sec_ts_y661_driver);
 }
 
-static void __exit sec_ts_exit(void)
+static void __exit sec_ts_y661_exit(void)
 {
-	i2c_del_driver(&sec_ts_driver);
+	i2c_del_driver(&sec_ts_y661_driver);
 }
 
 MODULE_AUTHOR("Hyobae, Ahn<hyobae.ahn@samsung.com>");
 MODULE_DESCRIPTION("Samsung Electronics TouchScreen driver");
 MODULE_LICENSE("GPL");
 
-module_init(sec_ts_init);
-module_exit(sec_ts_exit);
+module_init(sec_ts_y661_init);
+module_exit(sec_ts_y661_exit);

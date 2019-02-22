@@ -1,4 +1,4 @@
-/* drivers/input/touchscreen/sec_ts_fw.c
+/* drivers/input/touchscreen/sec_ts_y661_fw.c
  *
  * Copyright (C) 2015 Samsung Electronics Co., Ltd.
  * http://www.samsungsemi.com/
@@ -39,33 +39,33 @@ static int lv1_readsize;
 static int lv1_readremain;
 static int lv1_readoffset;
 
-static ssize_t sec_ts_reg_store(struct device *dev,
+static ssize_t sec_ts_y661_reg_store(struct device *dev,
 		struct device_attribute *attr, const char *buf, size_t size);
-static ssize_t sec_ts_regreadsize_store(struct device *dev,
+static ssize_t sec_ts_y661_regreadsize_store(struct device *dev,
 		struct device_attribute *attr, const char *buf, size_t size);
-static inline ssize_t sec_ts_store_error(struct device *dev,
+static inline ssize_t sec_ts_y661_store_error(struct device *dev,
 		struct device_attribute *attr, const char *buf, size_t count);
-static ssize_t sec_ts_enter_recovery_store(struct device *dev,
+static ssize_t sec_ts_y661_enter_recovery_store(struct device *dev,
 		struct device_attribute *attr, const char *buf, size_t size);
-static ssize_t sec_ts_regread_show(struct device *dev,
+static ssize_t sec_ts_y661_regread_show(struct device *dev,
 		struct device_attribute *attr, char *buf);
-static ssize_t sec_ts_gesture_status_show(struct device *dev,
+static ssize_t sec_ts_y661_gesture_status_show(struct device *dev,
 		struct device_attribute *attr, char *buf);
-static inline ssize_t sec_ts_show_error(struct device *dev,
+static inline ssize_t sec_ts_y661_show_error(struct device *dev,
 		struct device_attribute *attr, char *buf);
 
-static DEVICE_ATTR(sec_ts_reg, (S_IWUSR | S_IWGRP), NULL, sec_ts_reg_store);
-static DEVICE_ATTR(sec_ts_regreadsize, (S_IWUSR | S_IWGRP), NULL, sec_ts_regreadsize_store);
-static DEVICE_ATTR(sec_ts_enter_recovery, (S_IWUSR | S_IWGRP), NULL, sec_ts_enter_recovery_store);
-static DEVICE_ATTR(sec_ts_regread, S_IRUGO, sec_ts_regread_show, NULL);
-static DEVICE_ATTR(sec_ts_gesture_status, S_IRUGO, sec_ts_gesture_status_show, NULL);
+static DEVICE_ATTR(sec_ts_y661_reg, (S_IWUSR | S_IWGRP), NULL, sec_ts_y661_reg_store);
+static DEVICE_ATTR(sec_ts_y661_regreadsize, (S_IWUSR | S_IWGRP), NULL, sec_ts_y661_regreadsize_store);
+static DEVICE_ATTR(sec_ts_y661_enter_recovery, (S_IWUSR | S_IWGRP), NULL, sec_ts_y661_enter_recovery_store);
+static DEVICE_ATTR(sec_ts_y661_regread, S_IRUGO, sec_ts_y661_regread_show, NULL);
+static DEVICE_ATTR(sec_ts_y661_gesture_status, S_IRUGO, sec_ts_y661_gesture_status_show, NULL);
 
 static struct attribute *cmd_attributes[] = {
-	&dev_attr_sec_ts_reg.attr,
-	&dev_attr_sec_ts_regreadsize.attr,
-	&dev_attr_sec_ts_enter_recovery.attr,
-	&dev_attr_sec_ts_regread.attr,
-	&dev_attr_sec_ts_gesture_status.attr,
+	&dev_attr_sec_ts_y661_reg.attr,
+	&dev_attr_sec_ts_y661_regreadsize.attr,
+	&dev_attr_sec_ts_y661_enter_recovery.attr,
+	&dev_attr_sec_ts_y661_regread.attr,
+	&dev_attr_sec_ts_y661_gesture_status.attr,
 	NULL,
 };
 
@@ -74,9 +74,9 @@ static struct attribute_group cmd_attr_group = {
 };
 
 /* for debugging--------------------------------------------------------------------------------------*/
-static ssize_t sec_ts_reg_store(struct device *dev, struct device_attribute *attr, const char *buf, size_t size)
+static ssize_t sec_ts_y661_reg_store(struct device *dev, struct device_attribute *attr, const char *buf, size_t size)
 {
-	struct sec_ts_data *ts = dev_get_drvdata(dev);
+	struct sec_ts_y661_data *ts = dev_get_drvdata(dev);
 
 	if (ts->power_status == SEC_TS_STATE_POWER_OFF) {
 		input_info(true, &ts->client->dev, "%s: Power off state\n", __func__);
@@ -84,15 +84,15 @@ static ssize_t sec_ts_reg_store(struct device *dev, struct device_attribute *att
 	}
 
 	if (size > 0)
-		ts->sec_ts_i2c_write_burst(ts, (u8 *)buf, size);
+		ts->sec_ts_y661_i2c_write_burst(ts, (u8 *)buf, size);
 
 	input_info(true, &ts->client->dev, "%s: 0x%x, 0x%x, size %d\n", __func__, buf[0], buf[1], (int)size);
 	return size;
 }
 
-static ssize_t sec_ts_regread_show(struct device *dev, struct device_attribute *attr, char *buf)
+static ssize_t sec_ts_y661_regread_show(struct device *dev, struct device_attribute *attr, char *buf)
 {
-	struct sec_ts_data *ts = dev_get_drvdata(dev);
+	struct sec_ts_y661_data *ts = dev_get_drvdata(dev);
 	int ret;
 	int length;
 	int remain;
@@ -127,9 +127,9 @@ static ssize_t sec_ts_regread_show(struct device *dev, struct device_attribute *
 			length = remain;
 
 		if (offset == 0)
-			ret = ts->sec_ts_i2c_read(ts, lv1cmd, &read_lv1_buff[offset], length);
+			ret = ts->sec_ts_y661_i2c_read(ts, lv1cmd, &read_lv1_buff[offset], length);
 		else
-			ret = ts->sec_ts_i2c_read_bulk (ts, &read_lv1_buff[offset], length);
+			ret = ts->sec_ts_y661_i2c_read_bulk (ts, &read_lv1_buff[offset], length);
 
 		if (ret < 0) {
 			input_err(true, &ts->client->dev, "%s: i2c read %x command, remain =%d\n", __func__, lv1cmd, remain);
@@ -153,9 +153,9 @@ malloc_err:
 	return lv1_readsize;
 }
 
-static ssize_t sec_ts_gesture_status_show(struct device *dev, struct device_attribute *attr, char *buf)
+static ssize_t sec_ts_y661_gesture_status_show(struct device *dev, struct device_attribute *attr, char *buf)
 {
-	struct sec_ts_data *ts = dev_get_drvdata(dev);
+	struct sec_ts_y661_data *ts = dev_get_drvdata(dev);
 
 	mutex_lock(&ts->device_mutex);
 	memcpy(buf, ts->gesture_status, sizeof(ts->gesture_status));
@@ -168,9 +168,9 @@ static ssize_t sec_ts_gesture_status_show(struct device *dev, struct device_attr
 	return sizeof(ts->gesture_status);
 }
 
-static ssize_t sec_ts_regreadsize_store(struct device *dev, struct device_attribute *attr, const char *buf, size_t size)
+static ssize_t sec_ts_y661_regreadsize_store(struct device *dev, struct device_attribute *attr, const char *buf, size_t size)
 {
-	struct sec_ts_data *ts = dev_get_drvdata(dev);
+	struct sec_ts_y661_data *ts = dev_get_drvdata(dev);
 
 	mutex_lock(&ts->device_mutex);
 
@@ -185,10 +185,10 @@ static ssize_t sec_ts_regreadsize_store(struct device *dev, struct device_attrib
 	return size;
 }
 
-static ssize_t sec_ts_enter_recovery_store(struct device *dev, struct device_attribute *attr, const char *buf, size_t size)
+static ssize_t sec_ts_y661_enter_recovery_store(struct device *dev, struct device_attribute *attr, const char *buf, size_t size)
 {
-	struct sec_ts_data *ts = dev_get_drvdata(dev);
-	struct sec_ts_plat_data *pdata = ts->plat_data;
+	struct sec_ts_y661_data *ts = dev_get_drvdata(dev);
+	struct sec_ts_y661_plat_data *pdata = ts->plat_data;
 	int ret;
 	unsigned long on;
 
@@ -215,7 +215,7 @@ static ssize_t sec_ts_enter_recovery_store(struct device *dev, struct device_att
 		}
 
 		pdata->power(ts, false);
-		sec_ts_delay(100);
+		sec_ts_y661_delay(100);
 		pdata->power(ts, true);
 	} else {
 		gpio_free(pdata->irq_gpio);
@@ -232,50 +232,50 @@ static ssize_t sec_ts_enter_recovery_store(struct device *dev, struct device_att
 		}
 
 		pdata->power(ts, false);
-		sec_ts_delay(500);
+		sec_ts_y661_delay(500);
 		pdata->power(ts, true);
-		sec_ts_delay(500);
+		sec_ts_y661_delay(500);
 
 		/* AFE Calibration */
-		ret = ts->sec_ts_i2c_write(ts, SEC_TS_CMD_CALIBRATION_AMBIENT, NULL, 0);
+		ret = ts->sec_ts_y661_i2c_write(ts, SEC_TS_CMD_CALIBRATION_AMBIENT, NULL, 0);
 		if (ret < 0)
 			input_err(true, &ts->client->dev, "%s: fail to write AFE_CAL\n", __func__);
 
-		sec_ts_delay(1000);
+		sec_ts_y661_delay(1000);
 		enable_irq(ts->client->irq);
 	}
 
-	sec_ts_read_information(ts);
+	sec_ts_y661_read_information(ts);
 
 	return size;
 }
 
-static inline ssize_t sec_ts_show_error(struct device *dev,
+static inline ssize_t sec_ts_y661_show_error(struct device *dev,
 		struct device_attribute *attr, char *buf)
 {
-	struct sec_ts_data *ts = dev_get_drvdata(dev);
+	struct sec_ts_y661_data *ts = dev_get_drvdata(dev);
 
 	input_err(true, &ts->client->dev, "%s: read only function, %s\n", __func__, attr->attr.name);
 	return -EPERM;
 }
 
-static inline ssize_t sec_ts_store_error(struct device *dev,
+static inline ssize_t sec_ts_y661_store_error(struct device *dev,
 		struct device_attribute *attr, const char *buf, size_t count)
 {
-	struct sec_ts_data *ts = dev_get_drvdata(dev);
+	struct sec_ts_y661_data *ts = dev_get_drvdata(dev);
 
 	input_err(true, &ts->client->dev, "%s: write only function, %s\n", __func__, attr->attr.name);
 	return -EPERM;
 }
 
-int sec_ts_raw_device_init(struct sec_ts_data *ts)
+int sec_ts_y661_raw_device_init(struct sec_ts_y661_data *ts)
 {
 	int ret;
 
 #ifdef CONFIG_SEC_SYSFS
-	ts->dev = sec_device_create(ts, "sec_ts");
+	ts->dev = sec_device_create(ts, "sec_ts_y661");
 #else
-	ts->dev = device_create(sec_class, NULL, 0, ts, "sec_ts");
+	ts->dev = device_create(sec_class, NULL, 0, ts, "sec_ts_y661");
 #endif
 	ret = IS_ERR(ts->dev);
 	if (ret) {
