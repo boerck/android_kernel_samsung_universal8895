@@ -624,7 +624,6 @@ int proc_pid_statlmkd(struct seq_file *m, struct pid_namespace *ns,
 #ifdef CONFIG_MMU
 	unsigned long size = 0, resident = 0, swapresident = 0;
 	if (mm) {
-		task_statlmkd(mm, &size, &resident, &swapresident);
 		mmput(mm);
 	}
 #endif

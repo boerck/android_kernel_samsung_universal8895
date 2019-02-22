@@ -1698,6 +1698,10 @@ struct task_struct {
 
 	cputime_t utime, stime, utimescaled, stimescaled;
 	cputime_t gtime;
+#ifdef CONFIG_CPU_FREQ_TIMES
+	u64 *time_in_state;
+	unsigned int max_state;
+#endif
 	struct prev_cputime prev_cputime;
 #ifdef CONFIG_VIRT_CPU_ACCOUNTING_GEN
 	seqcount_t vtime_seqcount;
@@ -1992,6 +1996,9 @@ struct task_struct {
 #if defined(CONFIG_BCACHE) || defined(CONFIG_BCACHE_MODULE)
 	unsigned int	sequential_io;
 	unsigned int	sequential_io_avg;
+#endif
+#ifdef CONFIG_SDP
+	unsigned int sensitive;
 #endif
 #ifdef CONFIG_DEBUG_ATOMIC_SLEEP
 	unsigned long	task_state_change;
@@ -2789,6 +2796,10 @@ static inline void mmdrop(struct mm_struct * mm)
 
 /* mmput gets rid of the mappings and all user-space */
 extern void mmput(struct mm_struct *);
+/* same as above but performs the slow path from the async kontext. Can
+ * be called from the atomic context as well
+ */
+extern void mmput_async(struct mm_struct *);
 /* Grab a reference to a task's mm, if it is not already going away */
 extern struct mm_struct *get_task_mm(struct task_struct *task);
 /*

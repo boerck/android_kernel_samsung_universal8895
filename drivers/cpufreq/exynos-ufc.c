@@ -98,7 +98,10 @@ static ssize_t show_cpufreq_min_limit(struct kobject *kobj,
 		first_domain()->min_freq >> (scale * SCALE_SIZE));
 }
 
+#ifdef CONFIG_SCHED_HMP
 static bool boosted;
+#endif
+
 static inline void control_boost(bool enable)
 {
 #ifdef CONFIG_SCHED_HMP
