@@ -22,6 +22,8 @@
 
 #include "exynos-acme.h"
 
+struct pm_qos_request cpu_online_max_qos_req;
+
 /*********************************************************************
  *                          SYSFS INTERFACES                         *
  *********************************************************************/
@@ -61,6 +63,7 @@ static ssize_t show_cpufreq_table(struct kobject *kobj,
 	return count - 1;
 }
 
+#ifdef CONFIG_ARM_EXYNOS_UFC_DVFS
 static ssize_t show_cpufreq_min_limit(struct kobject *kobj,
 				struct attribute *attr, char *buf)
 {
@@ -379,7 +382,21 @@ static ssize_t show_cpufreq_max_limit(struct kobject *kobj,
 		first_domain()->min_freq >> (scale * SCALE_SIZE));
 }
 
-struct pm_qos_request cpu_online_max_qos_req;
+static ssize_t store_cpufreq_max_limit(struct kobject *kobj, struct attribute *attr,
+					const char *buf, size_t count)
+{
+	int input;
+
+	if (sscanf(buf, "%8d", &input) < 1)
+		return -EINVAL;
+
+	last_max_limit = input;
+	cpufreq_max_limit_update(input);
+
+	return count;
+}
+#endif
+
 static void enable_domain_cpus(struct exynos_cpufreq_domain *domain)
 {
 	struct cpumask mask;
@@ -499,20 +516,6 @@ static void cpufreq_max_limit_update(int input_freq)
 	}
 }
 
-static ssize_t store_cpufreq_max_limit(struct kobject *kobj, struct attribute *attr,
-					const char *buf, size_t count)
-{
-	int input;
-
-	if (sscanf(buf, "%8d", &input) < 1)
-		return -EINVAL;
-
-	last_max_limit = input;
-	cpufreq_max_limit_update(input);
-
-	return count;
-}
-
 static ssize_t show_execution_mode_change(struct kobject *kobj,
 				struct attribute *attr, char *buf)
 {
@@ -541,6 +544,8 @@ static ssize_t store_execution_mode_change(struct kobject *kobj, struct attribut
 
 static struct global_attr cpufreq_table =
 __ATTR(cpufreq_table, 0444, show_cpufreq_table, NULL);
+
+#ifdef CONFIG_ARM_EXYNOS_UFC_DVFS
 static struct global_attr cpufreq_min_limit =
 __ATTR(cpufreq_min_limit, 0644,
 		show_cpufreq_min_limit, store_cpufreq_min_limit);
@@ -550,6 +555,8 @@ __ATTR(cpufreq_min_limit_wo_boost, 0644,
 static struct global_attr cpufreq_max_limit =
 __ATTR(cpufreq_max_limit, 0644,
 		show_cpufreq_max_limit, store_cpufreq_max_limit);
+#endif
+
 static struct global_attr execution_mode_change =
 __ATTR(execution_mode_change, 0644,
 		show_execution_mode_change, store_execution_mode_change);
@@ -559,6 +566,7 @@ static __init void init_sysfs(void)
 	if (sysfs_create_file(power_kobj, &cpufreq_table.attr))
 		pr_err("failed to create cpufreq_table node\n");
 
+#ifdef CONFIG_ARM_EXYNOS_UFC_DVFS
 	if (sysfs_create_file(power_kobj, &cpufreq_min_limit.attr))
 		pr_err("failed to create cpufreq_min_limit node\n");
 
@@ -567,10 +575,10 @@ static __init void init_sysfs(void)
 
 	if (sysfs_create_file(power_kobj, &cpufreq_max_limit.attr))
 		pr_err("failed to create cpufreq_max_limit node\n");
+#endif
 
 	if (sysfs_create_file(power_kobj, &execution_mode_change.attr))
 		pr_err("failed to create cpufreq_max_limit node\n");
-
 }
 
 static int parse_ufc_ctrl_info(struct exynos_cpufreq_domain *domain,
