@@ -489,7 +489,7 @@ static int kbase_open(struct inode *inode, struct file *filp)
 		goto out;
 	}
 
-	sched_setscheduler(kctx->worker_thread, SCHED_FIFO, &param);
+	sched_setscheduler_nocheck(kctx->worker_thread, SCHED_FIFO, &param);
 
 	return 0;
 
