@@ -64,9 +64,6 @@ struct exynos_cpufreq_domain {
 	/* for sysfs */
 	unsigned int			user_default_qos;
 
-	/* freq boost */
-	bool				boost_supported;
-	unsigned int			*boost_max_freqs;
 	struct cpumask			online_cpus;
 
 	/* list head of DVFS Manager constraints */
