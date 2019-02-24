@@ -133,7 +133,7 @@ on post-fs-data
     restorecon /sys/kernel/debug/tracing/trace_marker
 
 # Samsung Pay
-    mkdir /efs/pfw_data 0760 spay spay    
+    mkdir /efs/pfw_data 0760 spay spay
 
 # MST/NFC Switch
     chown spay system /dev/mst_ctrl
@@ -175,72 +175,6 @@ on boot
     chown system radio /sys/devices/system/sec_os_ctrl/migrate_os
     chmod 0664 /sys/devices/system/sec_os_ctrl/migrate_os
 
-    # Change permission for interactive governor
-    chown system system /sys/devices/system/cpu/cpu0/cpufreq/interactive/timer_rate
-    chmod 0660 /sys/devices/system/cpu/cpu0/cpufreq/interactive/timer_rate
-    chown system system /sys/devices/system/cpu/cpu0/cpufreq/interactive/timer_slack
-    chmod 0660 /sys/devices/system/cpu/cpu0/cpufreq/interactive/timer_slack
-    chown system system /sys/devices/system/cpu/cpu0/cpufreq/interactive/min_sample_time
-    chmod 0660 /sys/devices/system/cpu/cpu0/cpufreq/interactive/min_sample_time
-    chown system system /sys/devices/system/cpu/cpu0/cpufreq/interactive/hispeed_freq
-    chmod 0660 /sys/devices/system/cpu/cpu0/cpufreq/interactive/hispeed_freq
-    chown system system /sys/devices/system/cpu/cpu0/cpufreq/interactive/target_loads
-    chmod 0660 /sys/devices/system/cpu/cpu0/cpufreq/interactive/target_loads
-    chown system system /sys/devices/system/cpu/cpu0/cpufreq/interactive/go_hispeed_load
-    chmod 0660 /sys/devices/system/cpu/cpu0/cpufreq/interactive/go_hispeed_load
-    chown system system /sys/devices/system/cpu/cpu0/cpufreq/interactive/above_hispeed_delay
-    chmod 0660 /sys/devices/system/cpu/cpu0/cpufreq/interactive/above_hispeed_delay
-    chown system system /sys/devices/system/cpu/cpu0/cpufreq/interactive/boost
-    chmod 0660 /sys/devices/system/cpu/cpu0/cpufreq/interactive/boost
-    chown system system /sys/devices/system/cpu/cpu0/cpufreq/interactive/boostpulse
-    chown system system /sys/devices/system/cpu/cpu0/cpufreq/interactive/input_boost
-    chmod 0660 /sys/devices/system/cpu/cpu0/cpufreq/interactive/input_boost
-    chown system system /sys/devices/system/cpu/cpu0/cpufreq/interactive/boostpulse_duration
-    chmod 0660 /sys/devices/system/cpu/cpu0/cpufreq/interactive/boostpulse_duration
-    chown system system /sys/devices/system/cpu/cpu0/cpufreq/interactive/io_is_busy
-    chmod 0660 /sys/devices/system/cpu/cpu0/cpufreq/interactive/io_is_busy
-    chown system system /sys/devices/system/cpu/cpu0/cpufreq/interactive/param_index
-    chmod 0660 /sys/devices/system/cpu/cpu0/cpufreq/interactive/param_index
-    chown system system /sys/devices/system/cpu/cpu0/cpufreq/interactive/mode
-    chmod 0660 /sys/devices/system/cpu/cpu0/cpufreq/interactive/mode
-
-    chown system system /sys/devices/system/cpu/cpu4/cpufreq/interactive/timer_rate
-    chmod 0660 /sys/devices/system/cpu/cpu4/cpufreq/interactive/timer_rate
-    chown system system /sys/devices/system/cpu/cpu4/cpufreq/interactive/timer_slack
-    chmod 0660 /sys/devices/system/cpu/cpu4/cpufreq/interactive/timer_slack
-    chown system system /sys/devices/system/cpu/cpu4/cpufreq/interactive/min_sample_time
-    chmod 0660 /sys/devices/system/cpu/cpu4/cpufreq/interactive/min_sample_time
-    chown system system /sys/devices/system/cpu/cpu4/cpufreq/interactive/hispeed_freq
-    chmod 0660 /sys/devices/system/cpu/cpu4/cpufreq/interactive/hispeed_freq
-    chown system system /sys/devices/system/cpu/cpu4/cpufreq/interactive/target_loads
-    chmod 0660 /sys/devices/system/cpu/cpu4/cpufreq/interactive/target_loads
-    chown system system /sys/devices/system/cpu/cpu4/cpufreq/interactive/go_hispeed_load
-    chmod 0660 /sys/devices/system/cpu/cpu4/cpufreq/interactive/go_hispeed_load
-    chown system system /sys/devices/system/cpu/cpu4/cpufreq/interactive/above_hispeed_delay
-    chmod 0660 /sys/devices/system/cpu/cpu4/cpufreq/interactive/above_hispeed_delay
-    chown system system /sys/devices/system/cpu/cpu4/cpufreq/interactive/boost
-    chmod 0660 /sys/devices/system/cpu/cpu4/cpufreq/interactive/boost
-    chown system system /sys/devices/system/cpu/cpu4/cpufreq/interactive/boostpulse
-    chown system system /sys/devices/system/cpu/cpu4/cpufreq/interactive/input_boost
-    chmod 0660 /sys/devices/system/cpu/cpu4/cpufreq/interactive/input_boost
-    chown system system /sys/devices/system/cpu/cpu4/cpufreq/interactive/boostpulse_duration
-    chmod 0660 /sys/devices/system/cpu/cpu4/cpufreq/interactive/boostpulse_duration
-    chown system system /sys/devices/system/cpu/cpu4/cpufreq/interactive/io_is_busy
-    chmod 0660 /sys/devices/system/cpu/cpu4/cpufreq/interactive/io_is_busy
-    chown system system /sys/devices/system/cpu/cpu4/cpufreq/interactive/param_index
-    chmod 0660 /sys/devices/system/cpu/cpu4/cpufreq/interactive/param_index
-    chown system system /sys/devices/system/cpu/cpu4/cpufreq/interactive/mode
-    chmod 0660 /sys/devices/system/cpu/cpu4/cpufreq/interactive/mode
-
-    #HMP
-    chown system system /sys/kernel/hmp/up_threshold
-    chown system system /sys/kernel/hmp/family_boost
-    chown system system /sys/module/cpuidle/parameters/priv_disable
-
-    chmod 0664 /sys/kernel/hmp/up_threshold
-    chmod 0664 /sys/kernel/hmp/family_boost
-    chmod 0664 /sys/module/cpuidle/parameters/priv_disable
-
     #CPUFREQ
     chown system system /sys/power/cpufreq_table
 
@@ -268,10 +202,6 @@ on boot
     chmod 0664 /dev/stune/top-app/schedtune.prefer_idle
     chmod 0664 /dev/stune/foreground/schedtune.prefer_idle
     chmod 0664 /dev/stune/background/schedtune.prefer_idle
-
-    # Permissions for wakeup_to_idle_cpu
-    chown system system /sys/kernel/hmp/wakeup_to_idle_cpu
-    chmod 0664 /sys/kernel/hmp/wakeup_to_idle_cpu
 
 # SEC_PM sysfs
     # Mongoose DVFS
@@ -329,10 +259,6 @@ on boot
     chown radio system /sys/class/devfreq/17000050.devfreq_cam/max_freq
     chmod 0664 /sys/class/devfreq/17000050.devfreq_cam/max_freq
 
-    # mali dvfs node
-    chown radio system /sys/devices/platform/13900000.mali/dvfs_table
-    chmod 0664 /sys/devices/platform/13900000.mali/dvfs_table
-
     # Cstate node
     chown radio system /sys/module/cpuidle/parameters/off
     chmod 0664 /sys/module/cpuidle/parameters/off
@@ -376,7 +302,7 @@ on boot
 # Permission for CCIC
     chown system radio /sys/class/sec/ccic/lpm_mode
     chown system radio /sys/class/sec/ccic/ccic_control_option
-    
+
 # Power Meter
     chown system system /sys/class/adc_meter/s2mps17_adc/adc_ctrl1
     chown system system /sys/class/adc_meter/s2mps17_adc/adc_en
@@ -420,7 +346,7 @@ on boot
     chmod 0660 /sys/class/adc_meter/s2mps17_adc/adc_reg_7
 
     chown system system /sys/module/s2mps17_core/parameters/smpl_warn_count
-    chmod 0660 /sys/module/s2mps17_core/parameters/smpl_warn_count    
+    chmod 0660 /sys/module/s2mps17_core/parameters/smpl_warn_count
 
 #for datarouter
     chown system system /dev/dun
@@ -735,7 +661,7 @@ on fs
     chown system radio /sys/class/sensors/accelerometer_sensor/selftest
     chown system radio /sys/class/sensors/accelerometer_sensor/lowpassfilter
     chown system radio /sys/class/sensors/accelerometer_sensor/dhr_sensor_info
-    
+
 # Proximity_sensor
     chown system radio /sys/class/sensors/proximity_sensor/raw_data
     chown system radio /sys/class/sensors/proximity_sensor/prox_avg
