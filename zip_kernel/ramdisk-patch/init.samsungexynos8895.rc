@@ -158,6 +158,9 @@ on boot
     chmod 660 /sys/block/sda/queue/read_ahead_kb
     write /sys/block/sda/queue/read_ahead_kb 2048
 
+# SD card readahead
+    chmod 660 /sys/block/mmcblk0/queue/read_ahead_kb
+
 # SSWAP
     write /proc/sys/vm/swappiness 160
 
