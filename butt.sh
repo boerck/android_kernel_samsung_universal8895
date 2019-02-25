@@ -12,6 +12,8 @@ set -e -o pipefail
 DATE=$(date +'%Y%m%d-%H%M')
 NAME=RZ_kernel
 
+DEFCONFIG=exynos8895_defconfig
+
 export ARCH=arm64
 export LOCALVERSION=-${VERSION}${DATE}
 
@@ -19,8 +21,10 @@ KERNEL_PATH=$(pwd)
 KERNEL_ZIP=${KERNEL_PATH}/zip_kernel
 KERNEL_ZIP_NAME=${NAME}_${VERSION}.zip
 KERNEL_IMAGE=${KERNEL_ZIP}/Image
-DT_IMG=${KERNEL_ZIP}/dtb.img
+DT_IMG=${KERNEL_ZIP}/dtb*.img
 OUTPUT_PATH=${KERNEL_PATH}/output
+
+CROSS_COMPILE=$(pwd)/aarch64-linaro-linux-gnu-4.9/bin/aarch64-linux-gnu-;
 
 JOBS=`grep processor /proc/cpuinfo | wc -l`
 
@@ -80,7 +84,7 @@ function clean() {
 
 	rm_if_exist ${OUTPUT_PATH};
 	rm_if_exist ${DT_IMG};
-	rm_if_exist ${KERNEL_PATH}/scripts/dtbTool;
+
 	cd ${KERNEL_ZIP};
 	make -j${JOBS} clean;
 	rm -rf ${DT_IMG};
@@ -92,9 +96,9 @@ function clean() {
 
 function menu() {
 	echo;
-	echo -e "***********************************************************************";
-	echo "      RZ Kernel for ${DEVICE_NAME}";
-	echo -e "***********************************************************************";
+	echo -e "**************************************************************************";
+	echo "   RZ Kernel for Samsung Galaxy S8/S8+ (Exynos) (SM-G95(0/5)(N/F/FD))";
+	echo -e "**************************************************************************";
 	echo "Choices:";
 	echo "1. Cleanup source";
 	echo "2. Build kernel";
@@ -103,39 +107,8 @@ function menu() {
 	echo "Leave empty to exit this script (it'll show invalid choice)";
 }
 
-function select_device() {
-	echo "Select which device you want to build for";
-	echo "1. Samsung Galaxy S8 (Exynos) (SM-G950F/FD)";
-	echo "2. Samsung Galaxy S8 Plus (Exynos) (SM-G955F/FD)";
-	read -n 1 -p "Choice: " -s device;	
-	case ${device} in
-		1) export DEFCONFIG=exynos8895-dreamlte_defconfig
-		   export DEVICE="dreamlte"
-		   export DEVICE_NAME="Samsung Galaxy S8 (Exynos) (SM-G950F/FD)"
-		   menu;;
-		2) export DEFCONFIG=exynos8895-dream2lte_defconfig
-		   export DEVICE="dream2lte"
-		   export DEVICE_NAME="Samsung Galaxy S8 Plus (Exynos) (SM-G955F/FD)"
-		   menu;;
-		*) echo
-		   echo "Invalid choice entered. Exiting..."
-		   sleep 2;
-		   exit 1;;
-	esac
-}
-
 function main() {
 	clear;
-	read -p "Please specify Toolchain path: " tcpath;
-	if [ "${tcpath}" == "" ]; then
-		echo -e "$red"
-		export CROSS_COMPILE=$(pwd)/aarch64-linaro-linux-gnu-4.9/bin/aarch64-linux-gnu-;
-		echo -e "No toolchain path found. Using default local one:$nocol ${CROSS_COMPILE}";
-	else
-		export CROSS_COMPILE=${tcpath};
-		echo -e "$red";
-		echo -e "Specified toolchain path: $nocol ${CROSS_COMPILE}";
-	fi;
 	if [ "${USE_CCACHE}" == "1" ]; then
 		CCACHE_PATH=/usr/local/bin/ccache;
 		export CROSS_COMPILE="${CCACHE_PATH} ${CROSS_COMPILE}";
@@ -144,7 +117,7 @@ function main() {
 		echo -e "You have enabled ccache through *export USE_CCACHE=1*, now using ccache...$nocol";
 	fi;
 
-	select_device;
+	menu;
 
 	read -n 1 -p "Select your choice: " -s choice;
 	case ${choice} in

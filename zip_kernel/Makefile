@@ -2,9 +2,7 @@ NAME ?= RZ_kernel
 
 DATE := $(shell date +'%Y%m%d-%H%M')
 
-DEVICE ?= dream2lte
-
-ZIP := $(NAME)-$(DEVICE)-$(DATE).zip
+ZIP := $(NAME)-$(DATE).zip
 
 EXCLUDE := Makefile README.md *.git* "$(NAME)-"*.zip*
 
