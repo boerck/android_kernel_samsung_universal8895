@@ -7,6 +7,10 @@ cd "$ramdisk_patch" && [ "$(ls)" ] || exit 0
 # fix permissions of patch files
 chmod -R 0755 .
 
+# Patch build fingerprint for modified default.prop
+bfp=$(cat $ramdisk/default.prop | grep ro.bootimage.build.fingerprint);
+echo $bfp >> ./default.prop;
+
 find -type f \( \
 	-name "*.rc" ! -name "ueventd.*" \
 	\) -exec chmod 0750 {} \;

@@ -59,4 +59,3 @@ wlan.wfd.hdcp=disable
 #
 ro.bootimage.build.date=Fri Feb 15 19:06:41 KST 2019
 ro.bootimage.build.date.utc=1550225201
-ro.bootimage.build.fingerprint=samsung/dream2ltexx/dream2lte:9/PPR1.180610.011/G955FXXU4DSBA:user/test-keys
