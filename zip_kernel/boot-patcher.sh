@@ -208,9 +208,12 @@ build_boot() {
 		rd=ramdisk-new
 		print "Found replacement ramdisk image!"
 	fi
-	if [ -s dtb.img ]; then
-		dtb=dtb.img
-		print "Found replacement device tree image!"
+
+	device_name=$(getprop ro.product.device)
+
+	if [ -s dtb_${device_name}.img ]; then
+		dtb=dtb_${device_name}.img
+		print "Found replacement device tree image for ${device_name}!"
 	fi
 	"$bin/bootimg" cvf boot-new.img "$split_img" \
 		${kernel:+--kernel "$kernel"} \

@@ -1,4 +1,4 @@
 /*.zip
 /*.zip.sha1
 /Image
-/dtb.img
+/dtb*.img
