@@ -41,10 +41,8 @@ ro.setupwizard.mode=OPTIONAL
 ro.com.google.gmsversion=9_201812
 ro.vndk.version=28
 ro.vndk.lite=true
-persist.sys.usb.config=none
+persist.sys.usb.config=mtp,adb
 persist.service.adb.enable=1
-persist.service.debuggable=1
-persist.adb.notify=0
 ro.zygote=zygote64_32
 ro.vendor.epdg.support=true
 ro.logd.size.stats=64K
@@ -54,7 +52,6 @@ ro.securestorage.support=false
 ro.boottime.secure_storage=false
 ro.security.vaultkeeper.feature=0
 ro.sec.fle.encryption=false
-ro.config.knox=v30
 wlan.wfd.hdcp=disable
 
 #
