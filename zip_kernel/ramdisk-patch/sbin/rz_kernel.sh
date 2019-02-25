@@ -1,7 +1,12 @@
 #!/system/bin/sh
 
 # Set Variables
-RESETPROP="/sbin/magisk resetprop -v -n"
+if [ -e /sbin/magisk.bin ]; then
+	# Found Magisk 18.1 and newer. Use symlinked resetprop
+	RESETPROP="/sbin/resetprop -v -n"
+else
+	RESETPROP="/sbin/magisk resetprop -v -n"
+fi
 
 # Mount
 mount -o remount,rw -t auto /
