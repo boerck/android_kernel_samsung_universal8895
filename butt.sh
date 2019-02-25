@@ -51,7 +51,7 @@ function build() {
 	make O=output -j${JOBS}
 	make O=output -j${JOBS} dtbs;
 	find ${KERNEL_PATH} -name "Image" -exec mv -f {} ${KERNEL_ZIP} \;
-	find ${KERNEL_PATH} -name "dtb.img" -exec mv -f {} ${KERNEL_ZIP} \;
+	find ${KERNEL_PATH} -name "dtb_*.img" -exec mv -f {} ${KERNEL_ZIP} \;
 
 	BUILD_END=$(date +"%s");
 	DIFF=$(($BUILD_END - $BUILD_START));
