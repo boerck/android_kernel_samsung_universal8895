@@ -273,9 +273,3 @@ config ARM_EXYNOS_UFC
 	  Exynos UFC suppored SoC must use the exynos ACME driver.
 
 	  If in doubt, say N.
-
-config ARM_EXYNOS_UFC_DVFS
-	bool "UFC DVFS support"
-	depends on ARM_EXYNOS_UFC
-	  help
-	  This enables or disables DVFS function from UFC
