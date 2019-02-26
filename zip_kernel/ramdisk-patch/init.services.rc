@@ -43,6 +43,10 @@ on boot
     start sysinit_cm
 
 on property:sys.boot_completed=1
+    # Disable DVFS
+    chown system system /sys/power/disable_dvfs
+    write /sys/power/disable_dvfs 1
+
     ## end boot time fs tune
     write /sys/block/sda/queue/scheduler cfq
     write /sys/block/sda/queue/iosched/slice_idle 0
