@@ -6063,8 +6063,9 @@ ssize_t sec_bat_store_attrs(
 					&temp_data[69], &temp_data[70], &temp_data[71],
 					&temp_data[72], &temp_data[73], &temp_data[74],
 					&temp_data[75], &temp_data[76]) <= CISD_DATA_MAX_PER_DAY) {
-					for (i = 0; i < CISD_DATA_MAX_PER_DAY; i++)
-						pcisd->data[i] = 0;
+						for (i = 0; i < CISD_DATA_MAX_PER_DAY; i++) {
+							pcisd->data[i] = 0;
+						}
 						pcisd->data[CISD_DATA_ALG_INDEX] = battery->pdata->cisd_alg_index;
 						pcisd->data[CISD_DATA_FULL_COUNT] = temp_data[0];
 						pcisd->data[CISD_DATA_CAP_MAX] = temp_data[1];
@@ -7318,7 +7319,7 @@ static int make_pd_list(struct sec_battery_info *battery)
 
 	for (i = 0; i < pd_list_index - 1; i++) {
 		min = i;
-		for (j = i + 1; j < pd_list_index; j++) {
+		for (j = pd_list_index - 1; j >= i + 1; j--) {
 			if (battery->pd_list.pd_info[j].input_voltage <
 				battery->pd_list.pd_info[min].input_voltage)
 				min = j;
