@@ -668,7 +668,7 @@ ifdef CONFIG_PROFILE_ALL_BRANCHES
 KBUILD_CFLAGS	+= -O2
 else
 KBUILD_CFLAGS   += -Ofast -ffast-math -funsafe-math-optimizations -march=armv8-a+crypto+fp16+crc
-KBUILD_CFLAGS   += -mtune=cortex-a73.cortex-a53 -mcpu=cortex-a73.cortex-a53+crypto+fp16+crc
+KBUILD_CFLAGS   += -mtune=exynos-m1 -mcpu=exynos-m1+crypto+fp16+crc
 endif
 endif
 
