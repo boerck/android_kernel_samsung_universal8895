@@ -29,14 +29,19 @@ DTB_OBJS := $(addprefix $(obj)/dts/,$(DTB_LIST))
 ifeq ($(CONFIG_EXYNOS_DTBTOOL),y)
 targets += dtb_dream2lte.img
 targets += dtb_dreamlte.img
+targets += dtb_greatlte.img
 
 DTB_DREAM2 += $(shell find -L $(obj)/dts/ -name \*dream2lte*.dtb)
 DTB_DREAM += $(shell find -L $(obj)/dts/ -name \*dreamlte*.dtb)
+DTB_GREAT += $(shell find -L $(obj)/dts/ -name \*greatlte*.dtb)
 
 $(obj)/dtb_dream2lte.img: $(DTB_DREAM2) FORCE
 	$(call if_changed,dtbtool_exynos)
 
 $(obj)/dtb_dreamlte.img: $(DTB_DREAM) FORCE
+	$(call if_changed,dtbtool_exynos)
+
+$(obj)/dtb_greatlte.img: $(DTB_GREAT) FORCE
 	$(call if_changed,dtbtool_exynos)
 endif
 

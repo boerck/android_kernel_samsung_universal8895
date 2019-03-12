@@ -111,6 +111,7 @@ KBUILD_DTBS	:= dtbs
 ifeq ($(CONFIG_EXYNOS_DTBTOOL),y)
 KBUILD_DTBS	+= dtb_dream2lte.img
 KBUILD_DTBS	+= dtb_dreamlte.img
+KBUILD_DTBS	+= dtb_greatlte.img
 endif
 
 all:	$(KBUILD_IMAGE) $(KBUILD_DTBS)
@@ -129,7 +130,7 @@ zinstall install: vmlinux
 %.dtb: scripts
 	$(Q)$(MAKE) $(build)=$(boot)/dts $(boot)/dts/$@
 
-PHONY += dtbs dtbs_install dtb_dream2.img dtb_dream.img
+PHONY += dtbs dtbs_install dtb_dream2.img dtb_dream.img dtb_great.img
 
 dtbs: prepare scripts
 	$(Q)$(MAKE) $(build)=$(boot)/dts
@@ -141,6 +142,9 @@ dtb_dream2lte.img: prepare scripts dtbs
 	$(Q)$(MAKE) $(build)=$(boot) $(boot)/$@
 
 dtb_dreamlte.img: prepare scripts dtbs
+	$(Q)$(MAKE) $(build)=$(boot) $(boot)/$@
+
+dtb_greatlte.img: prepare scripts dtbs
 	$(Q)$(MAKE) $(build)=$(boot) $(boot)/$@
 
 Image-dtb Image.gz-dtb: vmlinux scripts dtbs
