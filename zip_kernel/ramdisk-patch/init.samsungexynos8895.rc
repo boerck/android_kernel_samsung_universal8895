@@ -520,7 +520,7 @@ on boot
     chmod 664 /dev/cpuset/cpus
     write /dev/cpuset/top-app/cpus 0-7
     write /dev/cpuset/top-app/mems 0
-    write /dev/cpuset/foreground/cpus 0-3,6-7
+    write /dev/cpuset/foreground/cpus 0-2,4-7
     write /dev/cpuset/foreground/mems 0
     write /dev/cpuset/background/cpus 0-1
     write /dev/cpuset/background/mems 0
