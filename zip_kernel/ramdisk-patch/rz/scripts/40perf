@@ -7,3 +7,21 @@ busybox fstrim -v /data >> /data/trim.log;
 # Block unwanted wakelocks
 WAKELOCKS="12860000.decon_f;ssp_comm_wake_lock;ssp_wake_lock;tsp_wakelock;umts_ipc0;umts_ipc1"
 echo $WAKELOCKS > /sys/class/misc/boeffla_wakelock_blocker/wakelock_blocker
+
+## Workaround for Samsung Experience stock default IO scheduler
+#
+# CFQ is always set as default iosched. In case CFQ isn't
+# available, noop is replaced as default one instead, and this
+# is triggered at least 2s after boot completion
+#
+# A simple workaround that doesn't need removing CFQ or noop
+# from kernel side is to wait for 5s after boot completion,
+# then set our favoured default iosched. In this case, we use
+# FIOPS
+#
+# Note: Our current init.d impl triggers scripts execution after
+# boot complete, so there's no need for a boot state checkout
+
+sleep 5;
+echo "fiops" > /sys/block/sda/queue/scheduler;
+echo "fiops" > /sys/block/mmcblk0/queue/scheduler;
