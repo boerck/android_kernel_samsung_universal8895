@@ -25,3 +25,8 @@ echo $WAKELOCKS > /sys/class/misc/boeffla_wakelock_blocker/wakelock_blocker
 sleep 5;
 echo "fiops" > /sys/block/sda/queue/scheduler;
 echo "fiops" > /sys/block/mmcblk0/queue/scheduler;
+
+# RZ gaming control implementation
+mount -o remount,rw /;
+ln -sf /rz/add_game /sbin/add_game;
+mount -o remount,ro /;
