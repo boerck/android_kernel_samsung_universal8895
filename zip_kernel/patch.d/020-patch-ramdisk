@@ -2,14 +2,27 @@
 
 . "$env"
 
+# From AnyKernel2
+# insert_line <file> <if search string> <before|after> <line match string> <inserted line>
+insert_line() {
+  if [ -z "$(grep "$2" $1)" ]; then
+    case $3 in
+      before) offset=0;;
+      after) offset=1;;
+    esac;
+    line=$((`grep -n "$4" $1 | head -n1 | cut -d: -f1` + offset));
+    if [ -f $1 -a "$line" ] && [ "$(wc -l $1 | cut -d\  -f1)" -lt "$line" ]; then
+      echo "$5" >> $1;
+    else
+      sed -i "${line}s;^;${5}\n;" $1;
+    fi;
+  fi;
+}
+
 cd "$ramdisk_patch" && [ "$(ls)" ] || exit 0
 
 # fix permissions of patch files
 chmod -R 0755 .
-
-# Patch build fingerprint for modified default.prop
-bfp=$(cat $ramdisk/default.prop | grep ro.bootimage.build.fingerprint);
-echo $bfp >> ./default.prop;
 
 find -type f \( \
 	-name "*.rc" ! -name "ueventd.*" \
@@ -22,6 +35,9 @@ find -type f \( \
 	\) -exec chmod 0644 {} \;
 
 print "Copying new files to the ramdisk..."
+
+insert_line $ramdisk/init.rc "init.services.rc" after "import /init.environ.rc" "import /init.services.rc\n";
+
 cp -rd ./. "$ramdisk/"
 
 rm -rf $ramdisk/sbin/dm_verity_signature_checker
