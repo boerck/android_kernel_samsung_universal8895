@@ -219,14 +219,6 @@ on boot
     chmod 0664 /sys/power/cpuhotplug/min_online_cpu
     chmod 0664 /sys/power/cpuhotplug/max_online_cpu
 
-    # CPU boost
-    chown system system /sys/module/cpu_boost/parameters/input_boost_freq
-    chmod 0664 /sys/module/cpu_boost/parameters/input_boost_freq
-    chown system system /sys/module/cpu_boost/parameters/input_boost_ms
-    chmod 0664 /sys/module/cpu_boost/parameters/input_boost_ms
-    chown system system /sys/module/cpu_boost/parameters/dynamic_stune_boost
-    chmod 0664 /sys/module/cpu_boost/parameters/dynamic_stune_boost
-
     # cpu dvfs node
     chown system system /sys/power/cpuhotplug/cpufreq_table
     chmod 0664 /sys/power/cpuhotplug/cpufreq_table
